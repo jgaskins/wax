@@ -3,4 +3,4 @@
 set -e
 
 mkdir -p bin
-crystal build -o bin/wax src/wax.cr
+crystal build -o bin/wax src/cli.cr
