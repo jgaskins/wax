@@ -1,0 +1,37 @@
+name: wax
+version: 0.1.0
+
+authors:
+  - Jamie Gaskins <jgaskins@hey.com>
+
+targets:
+  wax:
+    main: src/cli.cr
+
+dependencies:
+  armature:
+    github: jgaskins/armature
+  interro:
+    github: jgaskins/interro
+
+  # Including the following so we can fetch them all concurrently. This is not
+  # necessary and is just a development optimization.
+  redis:
+    github: jgaskins/redis
+  db:
+    github: crystal-lang/crystal-db
+  pg:
+    github: will/crystal-pg
+  dotenv:
+    github: jgaskins/cr-dotenv
+  msgpack:
+    github: crystal-community/msgpack-crystal
+
+scripts:
+  postinstall: scripts/build
+executables:
+  - wax
+
+crystal: '>= 1.10.1'
+
+license: MIT

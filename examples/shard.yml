@@ -1,0 +1,17 @@
+name: deployments
+version: 0.1.0
+
+authors:
+  - Jamie Gaskins <jgaskins@hey.com>
+
+targets:
+  deployments-web:
+    main: src/web.cr
+
+dependencies:
+  wax:
+    path: ..
+
+crystal: '>= 1.10.1'
+
+license: MIT

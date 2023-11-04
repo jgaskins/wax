@@ -1,0 +1,17 @@
+/docs/
+/lib/
+/bin/
+/.shards/
+*.dwarf
+
+# Libraries don't need dependency lock
+# Dependencies will be locked in applications that use them
+/shard.lock
+
+/examples/.env
+/examples/bin
+/examples/db
+/examples/lib
+/examples/shard.lock
+/examples/src
+/examples/views
