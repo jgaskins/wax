@@ -892,6 +892,31 @@ module Wax
       end
 
       def dockerfile
+        file "Dockerfile", <<-EOF
+          FROM 84codes/crystal:1.10.0-alpine AS builder
+
+          COPY shard.yml shard.lock /app/
+          WORKDIR /app
+          ENV SHARDS_OPTS="--static"
+          RUN shards install --jobs 8
+
+          COPY src /app/src/
+          COPY views /app/views/
+          COPY db /app/db/
+          RUN crystal build -o bin/web --production --static --release --stats --progress src/web.cr
+          RUN crystal build -o bin/worker --production --static --release --stats --progress src/worker.cr
+
+          # Deployable container
+          FROM alpine
+
+          RUN apk add --update --no-cache tzdata ca-certificates
+
+          COPY --from=builder /app/bin/web /app/bin/worker /app/bin/interro-migration /app/bin/
+          COPY --from=builder /app/db/ /app/db/
+          WORKDIR /app
+
+          CMD ["/app/bin/web"]
+          EOF
       end
 
       def file(path, body)
