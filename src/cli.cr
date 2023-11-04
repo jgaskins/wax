@@ -903,8 +903,8 @@ module Wax
           COPY src /app/src/
           COPY views /app/views/
           COPY db /app/db/
-          RUN crystal build -o bin/web --production --static --release --stats --progress src/web.cr
-          RUN crystal build -o bin/worker --production --static --release --stats --progress src/worker.cr
+          RUN crystal build -o bin/web --static --release --stats --progress src/web.cr
+          RUN crystal build -o bin/worker --static --release --stats --progress src/worker.cr
 
           # Deployable container
           FROM alpine
