@@ -175,13 +175,19 @@ module Wax
       def redis
         file "src/config/redis.cr", <<-EOF
           require "redis"
-
+          require "mosquito"
+          
           require "./config"
           require "./env"
 
           Config.define redis : Redis::Client do
             Redis::Client.from_env("REDIS_URL")
           end
+
+          Mosquito.configure do |settings|
+            settings.redis_url = ENV["REDIS_URL"]
+          end
+
           EOF
       end
 
@@ -859,14 +865,9 @@ module Wax
 
       def jobs
         file "src/worker.cr", <<-EOF
-          require "mosquito"
           require "./jobs/**"
 
           src "config/redis"
-
-          Mosquito.configure do |settings|
-            settings.redis_url = ENV["REDIS_URL"]
-          end
 
           Mosquito::Runner.start
           EOF
