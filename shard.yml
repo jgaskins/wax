@@ -13,8 +13,8 @@ dependencies:
     github: jgaskins/armature
   interro:
     github: jgaskins/interro
-  mosquito:
-    github: mosquito-cr/mosquito
+  conveyor:
+    github: jgaskins/conveyor
 
   # Including the following so we can fetch them all concurrently. This is not
   # necessary and is just a development optimization.

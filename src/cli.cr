@@ -97,6 +97,7 @@ module Wax
               end
             end
           end
+
           EOF
         env
         cache
@@ -110,11 +111,13 @@ module Wax
           require "wax/load"
           require "dotenv"
           Dotenv.load?
+
           EOF
 
         file ".env", <<-EOF
-          DATABASE_URL="postgres:///#{@name.downcase}_dev"
+          DATABASE_URL="postgres:///#{@name.underscore}_dev"
           REDIS_URL="redis:///"
+
           EOF
       end
 
@@ -125,6 +128,7 @@ module Wax
           require "./redis"
 
           Armature.cache = Armature::Cache::RedisStore.new(REDIS_CACHE)
+
           EOF
       end
 
@@ -151,6 +155,7 @@ module Wax
               c.exec "SET statement_timeout = #{ENV.fetch("SQL_STATEMENT_TIMEOUT_MS", "10000")}"
             end
           end
+
           EOF
       end
 
@@ -169,23 +174,19 @@ module Wax
               expiration: 365.days, # 1 year
             )
           end
+
           EOF
       end
 
       def redis
         file "src/config/redis.cr", <<-EOF
           require "redis"
-          require "mosquito"
           
           require "./config"
           require "./env"
 
           Config.define redis : Redis::Client do
             Redis::Client.from_env("REDIS_URL")
-          end
-
-          Mosquito.configure do |settings|
-            settings.redis_url = ENV["REDIS_URL"]
           end
 
           EOF
@@ -198,6 +199,7 @@ module Wax
           require "./env"
 
           Log.setup_from_env
+
           EOF
       end
 
@@ -210,6 +212,7 @@ module Wax
           abstract struct Query(T) < Interro::QueryBuilder(T)
             include Validations
           end
+
           EOF
         file "src/queries/validations.cr", <<-EOF
           module Validations
@@ -317,6 +320,7 @@ module Wax
               !!(self.begin && self.end)
             end
           end
+
           EOF
 
         file "src/queries/user.cr", <<-EOF
@@ -344,6 +348,7 @@ module Wax
                 end
             end
           end
+
           EOF
       end
 
@@ -356,6 +361,7 @@ module Wax
           struct #{model}Query < Query(#{model})
             table "#{table}"
           end
+
           EOF
       end
 
@@ -379,6 +385,7 @@ module Wax
               packer.write bytes.to_slice
             end
           end
+
           EOF
 
         file "src/models/user.cr", <<-EOF
@@ -395,6 +402,7 @@ module Wax
             getter created_at : Time
             getter updated_at : Time
           end
+
           EOF
 
         now = Time.utc
@@ -416,9 +424,11 @@ module Wax
             created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
           )
+
           EOF
         file "db/migrations/#{time_string}-CreateUsers/down.sql", <<-EOF
           DROP TABLE users
+
           EOF
       end
 
@@ -489,6 +499,7 @@ module Wax
 
             # Add helper methods here
           end
+
           EOF
       end
 
@@ -502,7 +513,7 @@ module Wax
           src "config/sessions"
           src "routes/web"
 
-          log = Log.for("#{@name.downcase}.web")
+          log = Log.for("#{@name.underscore}.web")
           http = HTTP::Server.new([
             HTTP::LogHandler.new(log),
             HTTP::CompressHandler.new,
@@ -520,6 +531,7 @@ module Wax
           port = ENV.fetch("PORT", "3200").to_i
           log.info &.emit "Listening for HTTP requests", port: port
           http.listen port
+
           EOF
 
         file "src/routes/web.cr", <<-EOF
@@ -567,6 +579,7 @@ module Wax
               end
             end
           end
+
           EOF
 
         file "src/routes/home.cr", <<-EOF
@@ -581,6 +594,7 @@ module Wax
               end
             end
           end
+
           EOF
 
         file "src/bcrypt.cr", <<-EOF
@@ -593,6 +607,7 @@ module Wax
               new rs.read(String)
             end
           end
+
           EOF
 
         file "src/components/input.cr", <<-EOF
@@ -670,6 +685,7 @@ module Wax
               end
             end
           end
+
           EOF
 
         view "components/input", <<-EOF
@@ -679,6 +695,7 @@ module Wax
               <input<%== attributes %>>
             </label>
           </div>
+
           EOF
 
         file "src/routes/signup.cr", <<-EOF
@@ -722,6 +739,7 @@ module Wax
               end
             end
           end
+
           EOF
 
         view "signup/errors", <<-EOF
@@ -746,6 +764,7 @@ module Wax
               </li>
             <% end %>
           </ul>
+
           EOF
 
         view "signup/form", <<-EOF
@@ -756,6 +775,7 @@ module Wax
 
             <button id=sign-up>Sign up</button>
           <% end %>
+
           EOF
 
         file "src/routes/login.cr", <<-EOF
@@ -804,6 +824,7 @@ module Wax
               end
             end
           end
+
           EOF
 
         view "login/form", <<-EOF
@@ -817,6 +838,7 @@ module Wax
 
             <button>Login</button>
           <% end %>
+
           EOF
       end
 
@@ -841,6 +863,7 @@ module Wax
           </header>
 
           <main>
+
           EOF
         view "app/footer", <<-EOF
           </main>
@@ -848,14 +871,17 @@ module Wax
           <footer>
             <%# Footer content goes here %>
           </footer>
+
           EOF
 
         view "home/index", <<-EOF
           <h2>Homepage</h2>
+
           EOF
 
         view "app/not_found", <<-EOF
           <h2>Not Found</h2>
+
           EOF
       end
 
@@ -864,31 +890,53 @@ module Wax
       end
 
       def jobs
+        file "src/config/conveyor.cr", <<-EOF
+          require "conveyor"
+          require "wax/load"
+
+          require "./redis"
+
+          Conveyor.configure do |c|
+            c.redis = Config.redis
+          end
+
+          EOF
+
         file "src/worker.cr", <<-EOF
+          require "./config/conveyor"
+          require "./config/log"
           require "./jobs/**"
 
-          src "config/redis"
+          [
+            Signal::TERM,
+            Signal::INT,
+          ].each &.trap { Conveyor.orchestrator.stop }
 
-          Mosquito::Runner.start
+          Log.for("conveyor").notice { "Starting" }
+          Conveyor.orchestrator.start
+
           EOF
 
         file "src/jobs/job.cr", <<-EOF
-          require "mosquito"
+          require "../config/conveyor"
           require "wax/load"
 
-          class Job < Mosquito::QueuedJob
+          abstract struct Job < Conveyor::Job
           end
+
           EOF
 
         file "src/jobs/example.cr", <<-EOF
           require "./job"
 
-          class ExampleJob < Job
-            param something : String
+          struct ExampleJob < Job
+            def initialize(@something : String)
+            end
 
-            def perform
+            def call
             end
           end
+
           EOF
       end
 
@@ -917,6 +965,7 @@ module Wax
           WORKDIR /app
 
           CMD ["/app/bin/web"]
+
           EOF
       end
 
