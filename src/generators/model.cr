@@ -17,18 +17,21 @@ module Wax::Generators
       properties = properties.map do |raw|
         components = raw.split(':')
         unless (name = components[0]?) && (type = components[1]?)
-          STDERR.puts "Must supply property in the format `name:type` or `name:type:modifier1:modifier2:...`"
+          raise ArgumentError.new("Must supply property in the format `name:type` or `name:type:modifier1:modifier2:...`")
           exit 1
         end
-        nullable = type.ends_with?("?")
+        if (invalid = components[2..].reject { |component| valid_modifier? component }).any?
+          raise ArgumentError.new("Invalid property modifier#{'s' if invalid.size != 1} for #{name}:#{type} - #{invalid}. Can only be: #{valid_modifiers}")
+        end
+        nullable = components.includes?("optional")
         unique = components.includes?("unique")
         pkey = components.includes?("pkey")
 
-        crystal_type = CRYSTAL_TYPE_MAP.fetch(type.rchop("?")) do |k|
+        crystal_type = CRYSTAL_TYPE_MAP.fetch(type) do |k|
           k.camelcase lower: false
         end
 
-        sql_type = SQL_TYPE_MAP.fetch(type.rchop("?")) do |k|
+        sql_type = SQL_TYPE_MAP.fetch(type) do |k|
           k.upcase
         end
 
@@ -54,6 +57,14 @@ module Wax::Generators
       migration_files
     end
 
+    def self.valid_modifier?(modifier : String)
+      valid_modifiers.includes? modifier
+    end
+
+    def self.valid_modifiers
+      %w[optional unique pkey]
+    end
+
     def query_file
       code = String.build do |string|
         string.puts %{require "./query"}
@@ -72,10 +83,7 @@ module Wax::Generators
         string.puts
         string.puts "struct #{model_name} < Model"
         properties.each do |property|
-          string << "  getter #{property.name} : #{property.crystal_type}"
-          if property.nullable?
-            string << '?'
-          end
+          property.to_crystal string
           string.puts
         end
 
@@ -89,7 +97,8 @@ module Wax::Generators
       up = String.build do |string|
         string.puts "CREATE TABLE #{table_name}("
         properties.each_with_index 1 do |property, index|
-          string << "  " << property
+          string << "  "
+          property.to_sql string
           if index < properties.size
             string << ','
           end
@@ -136,7 +145,14 @@ module Wax::Generators
       def initialize(@name, @crystal_type, @sql_type, @nullable, @unique, @primary_key)
       end
 
-      def to_s(io) : Nil
+      def to_crystal(io) : Nil
+        io << "  getter #{name} : #{crystal_type}"
+        if nullable?
+          io << '?'
+        end
+      end
+
+      def to_sql(io) : Nil
         io << name << ' ' << sql_type
 
         if primary_key?
