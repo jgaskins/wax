@@ -6,7 +6,7 @@ using a few different Crystal shards:
 
 - [Armature](https://github.com/jgaskins/armature) for HTTP routing
 - [Interro](https://github.com/jgaskins/interro) for querying your Postgres database
-- [Mosquito](https://github.com/mosquito-cr/mosquito) for background jobs
+- [Conveyor](https://github.com/jgaskins/conveyor) for background jobs
 - [Redis](https://github.com/jgaskins/redis) as the backing store for caching, background jobs, and sessions
 - [Dotenv](https://github.com/gdotdesign/cr-dotenv) for loading configuration from .env files
 
