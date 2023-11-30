@@ -172,11 +172,17 @@ module Wax::Generators
     private CRYSTAL_TYPE_MAP = {
       "uuid"     => "UUID",
       "password" => "BCrypt::Password",
+      "int16"    => "Int16",
+      "int32"    => "Int32",
+      "int64"    => "Int64",
     }
 
     private SQL_TYPE_MAP = {
       "password" => "TEXT",
       "string"   => "TEXT",
+      "int16"    => "INT2",
+      "int32"    => "INT4",
+      "int64"    => "INT8",
     }
   end
 end

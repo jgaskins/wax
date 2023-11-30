@@ -1,12 +1,5 @@
 module Wax::Generators
-  abstract class Generator
-    abstract def type : String
-    abstract def call
-
-    def self.for(type : String)
-      SUBCOMMANDS[type]
-    end
-
+  module Commands
     def file(path, body)
       puts "Writing #{path}..."
       Dir.mkdir_p File.dirname(path)
@@ -16,6 +9,17 @@ module Wax::Generators
     def error(message : String, exit_code code = 1)
       STDERR.puts message
       exit code
+    end
+  end
+
+  abstract class Generator
+    include Commands
+
+    abstract def type : String
+    abstract def call
+
+    def self.for(type : String)
+      SUBCOMMANDS[type]
     end
 
     private macro handle(type)
