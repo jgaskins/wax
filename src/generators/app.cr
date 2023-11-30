@@ -59,6 +59,7 @@ module Wax::Generators
       file ".env", <<-EOF
         DATABASE_URL="postgres:///#{@name.underscore}_dev"
         REDIS_URL="redis:///"
+        HOST=127.0.0.1
 
         EOF
     end
@@ -416,9 +417,10 @@ module Wax::Generators
           Signal::TERM,
         ].each(&.trap { http.close })
 
+        host = ENV.fetch("HOST", "0.0.0.0")
         port = ENV.fetch("PORT", "3200").to_i
-        log.info &.emit "Listening for HTTP requests", port: port
-        http.listen port
+        log.info &.emit "Listening for HTTP requests", host: host, port: port
+        http.listen host, port
 
         EOF
 
