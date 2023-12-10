@@ -157,7 +157,7 @@ module Wax::Generators
         now.second,
         now.nanosecond,
       }
-      dir = "db/migrations/#{timestamp}-Create#{model_name}s"
+      dir = "db/migrations/#{timestamp}-Create#{plural_model_name}"
       file "#{dir}/up.sql", up
       file "#{dir}/down.sql", down
     end
@@ -166,9 +166,21 @@ module Wax::Generators
       name.camelcase(lower: false)
     end
 
+    def plural_model_name
+      plural_name.camelcase(lower: false)
+    end
+
     def table_name
-      # TODO: Implement some sort of inflection
-      "#{name.underscore}s"
+      plural_name.underscore
+    end
+
+    def plural_name
+      case name
+      when .ends_with? 'y'
+        "#{name[0...-1]}ies"
+      else
+        "#{name}s"
+      end
     end
 
     private struct Property
