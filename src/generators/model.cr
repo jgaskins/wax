@@ -104,6 +104,8 @@ module Wax::Generators
       code = String.build do |string|
         string.puts %{require "./query"}
         string.puts
+        string.puts %{src "models/#{name.underscore}"}
+        string.puts
         string.puts "struct #{model_name}Query < Query(#{model_name})"
         string.puts %{  table "#{table_name}"}
         string.puts "end"
