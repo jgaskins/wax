@@ -175,6 +175,7 @@ module Wax::Generators
       "int16"    => "Int16",
       "int32"    => "Int32",
       "int64"    => "Int64",
+      "time"     => "Time",
     }
 
     private SQL_TYPE_MAP = {
@@ -183,6 +184,7 @@ module Wax::Generators
       "int16"    => "INT2",
       "int32"    => "INT4",
       "int64"    => "INT8",
+      "time"     => "TIMESTAMPTZ",
     }
   end
 end
