@@ -14,35 +14,64 @@ module Wax::Generators
     def self.new(properties : Array(String))
       type_name, *properties = properties
 
-      properties = properties.map do |raw|
+      properties = properties.flat_map do |raw|
         components = raw.split(':')
-        unless (name = components[0]?) && (type = components[1]?)
-          raise ArgumentError.new("Must supply property in the format `name:type` or `name:type:modifier1:modifier2:...`")
-          exit 1
-        end
-        if (invalid = components[2..].reject { |component| valid_modifier? component }).any?
-          raise ArgumentError.new("Invalid property modifier#{'s' if invalid.size != 1} for #{name}:#{type} - #{invalid}. Can only be: #{valid_modifiers}")
-        end
-        nullable = components.includes?("optional")
-        unique = components.includes?("unique")
-        pkey = components.includes?("pkey")
+        case components
+        when %w[id]
+          Property.new(
+            name: "id",
+            crystal_type: "UUID",
+            sql_type: "UUID",
+            primary_key: true,
+          )
+        when %w[timestamps]
+          [
+            Property.new(
+              name: "created_at",
+              crystal_type: "Time",
+              sql_type: "TIMESTAMPTZ",
+              default: "now()",
+            ),
+            Property.new(
+              name: "updated_at",
+              crystal_type: "Time",
+              sql_type: "TIMESTAMPTZ",
+              default: "now()",
+            ),
+          ]
+        else
+          unless (name = components[0]?) && (type = components[1]?)
+            raise ArgumentError.new("Must supply property in the format `name:type` or `name:type:modifier1:modifier2:...`")
+            exit 1
+          end
+          if (invalid = components[2..].reject { |component| valid_modifier? component }).any?
+            raise ArgumentError.new("Invalid property modifier#{'s' if invalid.size != 1} for #{name}:#{type} - #{invalid}. Can only be: #{valid_modifiers + additional_modifiers}")
+          end
+          nullable = components.includes?("optional")
+          unique = components.includes?("unique")
+          pkey = components.includes?("pkey")
+          if default_component = components.compact_map(&.match(/default\((.*)\)/)).first?
+            default = default_component[1]
+          end
 
-        crystal_type = CRYSTAL_TYPE_MAP.fetch(type) do |k|
-          k.camelcase lower: false
-        end
+          crystal_type = CRYSTAL_TYPE_MAP.fetch(type) do |k|
+            k.camelcase lower: false
+          end
 
-        sql_type = SQL_TYPE_MAP.fetch(type) do |k|
-          k.upcase
-        end
+          sql_type = SQL_TYPE_MAP.fetch(type) do |k|
+            k.upcase
+          end
 
-        Property.new(
-          name: name,
-          crystal_type: crystal_type,
-          sql_type: sql_type,
-          nullable: nullable,
-          unique: unique,
-          primary_key: pkey,
-        )
+          Property.new(
+            name: name,
+            crystal_type: crystal_type,
+            sql_type: sql_type,
+            nullable: nullable,
+            unique: unique,
+            primary_key: pkey,
+            default: default,
+          )
+        end
       end
 
       new type_name, properties
@@ -58,11 +87,17 @@ module Wax::Generators
     end
 
     def self.valid_modifier?(modifier : String)
-      valid_modifiers.includes? modifier
+      return true if valid_modifiers.includes? modifier
+      return true if modifier =~ /default(.*)/
+      false
     end
 
     def self.valid_modifiers
       %w[optional unique pkey]
+    end
+
+    def self.additional_modifiers
+      ["default(SQL expression)"]
     end
 
     def query_file
@@ -141,8 +176,18 @@ module Wax::Generators
       getter? nullable : Bool
       getter? unique : Bool
       getter? primary_key : Bool
+      getter default : String?
 
-      def initialize(@name, @crystal_type, @sql_type, @nullable, @unique, @primary_key)
+      def initialize(
+        @name,
+        *,
+        @crystal_type,
+        @sql_type,
+        @nullable = false,
+        @unique = false,
+        @primary_key = false,
+        @default = nil
+      )
       end
 
       def to_crystal(io) : Nil
@@ -165,6 +210,10 @@ module Wax::Generators
 
         unless nullable?
           io << " NOT NULL"
+        end
+
+        if default
+          io << " DEFAULT " << default
         end
       end
     end
