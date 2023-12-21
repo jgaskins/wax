@@ -70,7 +70,7 @@ module Wax::Generators
         require "./config"
         require "./redis"
 
-        Armature.cache = Armature::Cache::RedisStore.new(REDIS_CACHE)
+        Armature.cache = Armature::Cache::RedisStore.new(Config.redis)
 
         EOF
     end
@@ -379,7 +379,9 @@ module Wax::Generators
       file "src/routes/route.cr", <<-EOF
         require "armature/route"
         require "armature/form"
-        require "armature/cache"
+        require "wax/load"
+
+        src "config/cache"
 
         module Route
           include Armature::Route
