@@ -67,6 +67,7 @@ module Wax::Generators
     def cache
       file "src/config/cache.cr", <<-EOF
         require "armature/cache"
+        require "armature/cache/redis"
         require "./config"
         require "./redis"
 
