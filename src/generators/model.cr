@@ -239,6 +239,7 @@ module Wax::Generators
       "int32"    => "Int32",
       "int64"    => "Int64",
       "time"     => "Time",
+      "boolean"  => "Bool",
     }
 
     private SQL_TYPE_MAP = {
