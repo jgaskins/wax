@@ -18,7 +18,7 @@ module Wax::Generators
     end
 
     def call
-      file "src/routes/#{@name.underscore}.cr", <<-EOF
+      file "src/routes/#{@name.underscore.gsub("::", "/")}.cr", <<-EOF
         require "./route"
 
         struct #{@name.camelcase(lower: false)}
