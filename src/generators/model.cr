@@ -96,7 +96,7 @@ module Wax::Generators
     end
 
     def self.valid_modifiers
-      %w[optional unique pkey]
+      %w[optional unique pkey array]
     end
 
     def self.additional_modifiers
