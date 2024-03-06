@@ -51,6 +51,7 @@ module Wax::Generators
           nullable = components.includes?("optional")
           unique = components.includes?("unique")
           pkey = components.includes?("pkey")
+          array = components.includes?("array")
           if default_component = components.compact_map(&.match(/default\((.*)\)/)).first?
             default = default_component[1]
           end
@@ -69,6 +70,7 @@ module Wax::Generators
             sql_type: sql_type,
             nullable: nullable,
             unique: unique,
+            array: array,
             primary_key: pkey,
             default: default,
           )
@@ -189,6 +191,7 @@ module Wax::Generators
       getter crystal_type : String
       getter sql_type : String
       getter? nullable : Bool
+      getter? array : Bool
       getter? unique : Bool
       getter? primary_key : Bool
       getter default : String?
@@ -199,6 +202,7 @@ module Wax::Generators
         @crystal_type,
         @sql_type,
         @nullable = false,
+        @array = false,
         @unique = false,
         @primary_key = false,
         @default = nil
@@ -206,7 +210,12 @@ module Wax::Generators
       end
 
       def to_crystal(io) : Nil
-        io << "  getter #{name} : #{crystal_type}"
+        io << "  getter #{name} : "
+        if array?
+          io << "Array(" << crystal_type << ')'
+        else
+          io << crystal_type
+        end
         if nullable?
           io << '?'
         end
@@ -214,6 +223,10 @@ module Wax::Generators
 
       def to_sql(io) : Nil
         io << name << ' ' << sql_type
+
+        if array?
+          io << "[]"
+        end
 
         if primary_key?
           io << " PRIMARY KEY"
