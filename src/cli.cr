@@ -29,6 +29,10 @@ module Wax
             Commands::Generate.call subcommands
           end
         end
+
+        parser.invalid_option do |flag|
+          # Do nothing because it'll be handled by nested commands
+        end
       end
     end
   end
