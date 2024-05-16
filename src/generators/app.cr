@@ -1119,6 +1119,20 @@ module Wax::Generators
         require "wax-spec/factory"
 
         EOF
+
+      file "spec/prepare_db.sh", <<-EOF
+        #!/usr/bin/env bash
+
+        set -e
+
+        (
+          source .env.test
+          export DATABASE_URL
+          createdb manifold_test 2>&1 || true
+          bin/interro-migration run
+        )
+
+        EOF
     end
 
     def dockerfile
