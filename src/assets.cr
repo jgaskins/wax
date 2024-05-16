@@ -8,7 +8,7 @@ class Wax::Assets
 
   def initialize(
     @path = "assets",
-    cache_for @cache_duration = ENV.fetch("ASSET_CACHE_DURATION_SECONDS", "0").to_f.seconds
+    cache_for @cache_duration = ENV.fetch("ASSET_CACHE_DURATION_SECONDS", "86400").to_f.seconds
   )
   end
 
