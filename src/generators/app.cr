@@ -841,34 +841,44 @@ module Wax::Generators
     def views
       view "app/header", <<-EOF
         <!doctype html>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="stylesheet" href="<%= assets["app.css"]? %>">
-        <script src="<%= assets["app.js"]? %>"></script>
+        <html class="dark bg-white dark:bg-gray-900">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="stylesheet" href="<%= assets["app.css"]? %>">
+          <script src="<%= assets["app.js"]? %>"></script>
+        </head>
+        <body class="bg-white dark:bg-gray-900">
+          <header class="bg-white dark:bg-gray-900">
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+              <h1 class="text-3xl font-bold leading-tight text-gray-900 dark:text-white">
+                <a href="/">#{name.underscore.split('_').map(&.capitalize).join(' ')}</a>
+              </h1>
+              <nav class="mt-4">
+                <% if current_user %>
+                  <span class="text-gray-600 dark:text-gray-400">Logged in as <%= current_user.name %></span>
+                <% else %>
+                  <a href="/login" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">Login</a>
+                  <span class="text-gray-600 dark:text-gray-400 mx-2">or</span>
+                  <a href="/signup" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">sign up</a>
+                <% end %>
+              </nav>
+            </div>
+          </header>
 
-        <header>
-          <h1><a href="/">#{name}</a></h1>
-
-          <nav>
-            <% if current_user %>
-              Logged in as <%= current_user.name %>
-            <% else %>
-              <a href="/login">Login</a>
-              or
-              <a href="/signup">sign up</a>
-            <% end %>
-          </nav>
-        </header>
-
-        <main>
+          <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 rounded-md bg-gray-100 dark:bg-gray-800 text-black dark:text-white">
 
         EOF
       view "app/footer", <<-EOF
-        </main>
+          </main>
 
-        <footer>
-          <%# Footer content goes here %>
-        </footer>
+          <footer class="bg-white dark:bg-gray-900">
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+              <%# Footer content goes here %>
+            </div>
+          </footer>
+        </body>
+        </html>
 
         EOF
 
