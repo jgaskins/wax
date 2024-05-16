@@ -683,8 +683,9 @@ module Wax::Generators
                 when true
                   io << ' ' << key.to_s
                 else
-                  io << ' ' << key.to_s << '='
-                  value.to_s io
+                  io << ' ' << key << %{="}
+                  HTML.escape value.to_s, io
+                  io << '"'
                 end
               end
             end
