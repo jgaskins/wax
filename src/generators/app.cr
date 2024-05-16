@@ -617,13 +617,13 @@ module Wax::Generators
                     name = params["name"]? || ""
                     password = params["password"]? || ""
 
-                    case result = UserQuery.new.create(email: email, name: name, password: BCrypt::Password.create(password, cost: @password_cost))
-                    in Validations::Success(User)
-                      session["user_id"] = result.object.id.to_s
+                    case user = UserQuery.new.create(email: email, name: name, password: BCrypt::Password.create(password, cost: @password_cost))
+                    in User
+                      session["user_id"] = user.id.to_s
                       response.redirect "/"
-                    in Validations::Failure
+                    in Interro::Validations::Failure
                       response.status = :unprocessable_entity
-                      errors = result.errors
+                      errors = user.errors
                       render "signup/errors"
                       render "signup/form"
                     end
