@@ -2,12 +2,15 @@ require "option_parser"
 require "levenshtein"
 
 require "./commands/generate"
+require "./commands/serve"
 
 module Wax
   class CLI
     enum Command
       Generate
       G
+      Serve
+      S
     end
 
     def self.call(args = ARGV)
@@ -27,6 +30,8 @@ module Wax
             exit 1
           in .generate?, .g?
             Commands::Generate.call subcommands
+          in .serve?, .s?
+            Commands::Serve.call subcommands
           end
         end
 

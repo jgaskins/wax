@@ -15,6 +15,9 @@ dependencies:
     github: jgaskins/interro
   conveyor:
     github: jgaskins/conveyor
+  sentry:
+    github: jgaskins/sentry
+    branch: multiple-runners
 
   # Including the following so we can fetch them all concurrently. This is not
   # necessary and is just a development optimization.
