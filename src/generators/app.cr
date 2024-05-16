@@ -1025,7 +1025,7 @@ module Wax::Generators
         (
           source .env.test
           export DATABASE_URL
-          createdb manifold_test 2>&1 || true
+          createdb #{name.underscore}_test 2>&1 || true
           bin/interro-migration run
         )
 
