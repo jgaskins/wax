@@ -1,5 +1,6 @@
 require "./generator"
 require "http"
+require "yaml"
 
 module Wax::Generators
   class App < Generator
@@ -196,6 +197,45 @@ module Wax::Generators
         bin/setup
         bin/wax serve
         EOF
+
+      shard = ShardConfig.from_yaml(File.read("shard.yml"))
+      shard.targets["#{name.underscore}-web"] = ShardConfig::Target.new("src/web.cr")
+      shard.targets["#{name.underscore}-worker"] = ShardConfig::Target.new("src/worker.cr")
+      File.write "shard.yml", shard.to_yaml
+    end
+
+    struct ShardConfig
+      include YAML::Serializable
+      include YAML::Serializable::Unmapped
+
+      getter name : String
+      getter version : String
+      getter authors : Array(String)
+      getter targets : Hash(String, Target) { {} of String => Target }
+      getter dependencies : Hash(String, Dependency) { {} of String => Dependency }
+      getter development_dependencies : Hash(String, Dependency) { {} of String => Dependency }
+      getter crystal : String
+      getter license : String?
+
+      struct Target
+        include YAML::Serializable
+        include YAML::Serializable::Unmapped
+
+        getter main : String
+
+        def initialize(@main)
+        end
+      end
+
+      struct Dependency
+        include YAML::Serializable
+        include YAML::Serializable::Unmapped
+
+        getter path : String?
+        getter github : String?
+        getter branch : String?
+        getter commit : String?
+      end
     end
 
     def queries
