@@ -188,6 +188,8 @@ module Wax::Generators
 
         createdb #{name.underscore}_dev
         createdb #{name.underscore}_test
+        bin/interro-migration run
+        spec/prepare_db.sh
 
         npm install --global npx > /dev/null 2>&1
         npm install
@@ -1120,7 +1122,7 @@ module Wax::Generators
 
         EOF
 
-      file "spec/prepare_db.sh", <<-EOF
+      file "spec/prepare_db.sh", <<-EOF, executable: true
         #!/usr/bin/env bash
 
         set -e
