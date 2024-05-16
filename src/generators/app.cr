@@ -186,10 +186,9 @@ module Wax::Generators
       file "bin/setup", <<-EOF, executable: true
         #!/usr/bin/env bash
 
-        set -e
-
         createdb #{name.underscore}_dev
         createdb #{name.underscore}_test
+
         npm install --global npx > /dev/null 2>&1
         npm install
 
