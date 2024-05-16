@@ -1,9 +1,13 @@
 module Wax::Generators
   module Commands
-    def file(path, body)
+    def file(path, body, *, executable = false) : Nil
       puts "Writing #{path}..."
       Dir.mkdir_p File.dirname(path)
       File.write path, body
+
+      if executable
+        File.chmod path, 0o755
+      end
     end
 
     def error(message : String, exit_code code = 1)

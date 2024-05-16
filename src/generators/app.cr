@@ -1,4 +1,5 @@
 require "./generator"
+require "http"
 
 module Wax::Generators
   class App < Generator
@@ -24,8 +25,20 @@ module Wax::Generators
       routes
       web
       views
+      assets
       jobs
+      specs
       dockerfile
+
+      puts <<-EOF
+
+        Done writing app files. You can add the following to your shard.yml
+        under `targets` to get `shards build` functionality:
+
+        Run `bin/setup` to install dependencies and create the DB.
+        Run `bin/wax serve` to start the web app, background-job worker, and asset compiler
+
+        EOF
     end
 
     def config
@@ -41,11 +54,24 @@ module Wax::Generators
         end
 
         EOF
+
+      file ".gitignore", <<-EOF
+        /docs/
+        /lib/
+        /bin/
+        /.shards/
+        *.dwarf
+        .env
+        node_modules
+
+        EOF
+
       env
       cache
       db
       sessions
       log
+      bin
     end
 
     def env
@@ -57,9 +83,17 @@ module Wax::Generators
         EOF
 
       file ".env", <<-EOF
-        DATABASE_URL="postgres:///#{@name.underscore}_dev"
+        DATABASE_URL="postgres:///#{@name.underscore}_dev?max_idle_pool_size=25"
         REDIS_URL="redis:///"
         HOST=127.0.0.1
+        PORT=3200
+        ASSET_CACHE_DURATION_SECONDS=0
+
+        EOF
+
+      file ".env.test", <<-EOF
+        DATABASE_URL="postgres:///#{@name.underscore}_test"
+        LOG_LEVEL=warn
 
         EOF
     end
@@ -144,6 +178,23 @@ module Wax::Generators
 
         Log.setup_from_env
 
+        EOF
+    end
+
+    def bin
+      file "bin/setup", <<-EOF, executable: true
+        #!/usr/bin/env bash
+
+        npm install --global npx > /dev/null 2>&1
+        npm install
+
+        EOF
+
+      file "bin/dev", <<-EOF, executable: true
+        #!/usr/bin/env bash
+
+        bin/setup
+        bin/wax serve
         EOF
     end
 
@@ -393,6 +444,12 @@ module Wax::Generators
         end
 
         EOF
+
+      file "spec/routes/route_helper.cr", <<-EOF
+        require "wax-spec/route_helper"
+        require "../spec_helper"
+
+        EOF
     end
 
     def web
@@ -429,6 +486,7 @@ module Wax::Generators
 
       file "src/routes/web.cr", <<-EOF
         require "./route"
+        require "wax/assets"
 
         src "queries/user"
         src "routes/home"
@@ -471,6 +529,8 @@ module Wax::Generators
               UserQuery.new.find(current_user_id)
             end
           end
+
+          getter assets : Wax::Assets { Wax::Assets.new }
         end
 
         EOF
@@ -740,6 +800,8 @@ module Wax::Generators
         <!doctype html>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="<%= assets["app.css"]? %>">
+        <script src="<%= assets["app.js"]? %>"></script>
 
         <header>
           <h1><a href="/">#{name}</a></h1>
@@ -780,6 +842,122 @@ module Wax::Generators
 
     def view(path, template)
       file "views/#{path}.ecr", template
+    end
+
+    def assets
+      file "package.json", <<-EOF
+        {
+          "devDependencies": {
+            "@rollup/plugin-node-resolve": "^15.2.3",
+            "@tailwindcss/forms": "^0.5.7",
+            "autoprefixer": "^10.4.17",
+            "postcss": "^8.4.33",
+            "postcss-cli": "^11.0.0",
+            "tailwindcss": "^3.4.1"
+          },
+          "dependencies": {
+            "htmx.org": "^1.9.12"
+          }
+        }
+
+        EOF
+
+      file "tailwind.config.js", <<-EOF
+        /** @type {import('tailwindcss').Config} */
+        module.exports = {
+          content: [
+            "./src/**/*.cr",
+            "./views/**/*.ecr",
+          ],
+          theme: {
+            extend: {},
+          },
+          plugins: [
+            require('@tailwindcss/forms'),
+          ],
+        }
+
+        EOF
+
+      file "postcss.config.js", <<-EOF
+        module.exports = {
+          plugins: {
+            tailwindcss: {},
+            autoprefixer: {},
+          }
+        }
+
+        EOF
+
+      file "rollup.config.mjs", <<-EOF
+        import { nodeResolve } from '@rollup/plugin-node-resolve';
+
+        export default {
+          input: 'assets/app.js',
+          output: {
+            dir: 'public',
+            format: 'cjs',
+          },
+          plugins: [nodeResolve()],
+        };
+
+        EOF
+
+      file "assets/app.js", <<-EOF
+        import "htmx.org"
+        EOF
+      file "assets/js/htmx.js", HTTP::Client.get("https://unpkg.com/htmx.org@1.9.10/dist/htmx.js").body
+
+      file "assets/app.css", <<-EOF
+        @tailwind base;
+        @tailwind components;
+        @tailwind utilities;
+        EOF
+
+      file "src/assets.cr", <<-EOF
+        require "digest/sha256"
+
+        class Assets
+          getter name_map = {} of String => CacheEntry
+
+          @path : String
+          @cache_duration : Time::Span
+
+          def initialize(
+            @path = "assets",
+            cache_for @cache_duration = ENV.fetch("ASSET_CACHE_DURATION_SECONDS", "0").to_f.seconds
+          )
+          end
+
+          def []?(key : String)
+            entry = name_map.fetch(key) do
+              value = hash(key)
+              name_map[key] = CacheEntry.new(value, expires_at: @cache_duration.from_now)
+              File.copy "public/\#{key}", "public/\#{value}"
+              # We just created this, so we know it's fresh and we can just return it
+              return value
+            end
+
+            if entry.expires_at < Time.utc
+              name_map.delete key
+              self[key]?
+            else
+              entry.value
+            end
+          end
+
+          def hash(key : String)
+            source = "public/\#{key}"
+            hash = Digest::SHA256.new.file(source).hexfinal
+            "\#{File.dirname(source).lchop("public")}/\#{File.basename(source).rchop(File.extname(source))}-\#{hash}\#{File.extname(source)}"
+          end
+
+          record CacheEntry,
+            value : String,
+            expires_at : Time
+        end
+
+        EOF
     end
 
     def jobs
@@ -833,9 +1011,32 @@ module Wax::Generators
         EOF
     end
 
+    def specs
+      file "spec/spec_helper.cr", <<-EOF
+        require "spec"
+        require "wax/load"
+        require "./config/env"
+
+        EOF
+
+      file "spec/config/env.cr", <<-EOF
+        require "wax/load"
+        require "dotenv"
+        Dotenv.load? ".env.test"
+
+        src "config/env"
+
+        EOF
+
+      file "spec/factories/factory.cr", <<-EOF
+        require "wax-spec/factory"
+
+        EOF
+    end
+
     def dockerfile
       file "Dockerfile", <<-EOF
-        FROM 84codes/crystal:1.10.1-alpine AS builder
+        FROM 84codes/crystal:1.12.1-alpine AS builder
 
         COPY shard.yml shard.lock /app/
         WORKDIR /app
