@@ -1012,6 +1012,9 @@ module Wax::Generators
       file "spec/factories/factory.cr", <<-EOF
         require "wax-spec/factory"
 
+        abstract struct Factory < Wax::Factory
+        end
+
         EOF
 
       file "spec/prepare_db.sh", <<-EOF, executable: true
