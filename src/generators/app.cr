@@ -271,7 +271,7 @@ module Wax::Generators
           end
 
           def create(email : String, name : String, password : BCrypt::Password)
-            result = Result(User).new
+            Result(User).new
               .validate_presence(email: email, name: name)
               .validate_uniqueness("email") { where(email: email).any? }
               .valid do
