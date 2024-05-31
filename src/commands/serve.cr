@@ -32,7 +32,7 @@ module Wax::Commands
     getter web : Sentry::ProcessRunner do
       Sentry::ProcessRunner.new(
         display_name: "#{name} web",
-        build_command: "time shards build #{name}-web --error-trace ",
+        build_command: "time GC_DONT_GC=1 shards build #{name}-web --error-trace ",
         run_command: "bin/#{name}-web",
         files: ["src/**/*.cr", "views/**/*.ecr"],
       )
@@ -41,7 +41,7 @@ module Wax::Commands
     getter worker : Sentry::ProcessRunner do
       Sentry::ProcessRunner.new(
         display_name: "#{name} worker",
-        build_command: "shards build #{name}-worker",
+        build_command: "time GC_DONT_GC=1 shards build #{name}-worker",
         run_command: "bin/#{name}-worker",
         files: ["src/**/*.cr", "views/**/*.ecr"],
       )
