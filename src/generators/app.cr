@@ -270,10 +270,15 @@ module Wax::Generators
             where(email: email).first?
           end
 
-          def create(email : String, name : String, password : BCrypt::Password)
+          def with_role(role : User::Role)
+            where role: role.value
+          end
+
+          def create(email : String, name : String, password : BCrypt::Password, role : User::Role = :member)
             Result(User).new
               .validate_presence(email: email, name: name)
               .validate_uniqueness("email") { where(email: email).any? }
+              .validate("role must be a valid user role") { role.valid? }
               .valid do
                 insert email: email, name: name, password: password.to_s
               end
@@ -330,8 +335,14 @@ module Wax::Generators
           getter name : String
           @[DB::Field(converter: BCrypt::Password)]
           getter password : BCrypt::Password
+          getter role : Role
           getter created_at : Time
           getter updated_at : Time
+
+          enum Role
+            Member = 0
+            Admin  = 1
+          end
         end
 
         EOF
@@ -352,6 +363,7 @@ module Wax::Generators
           email TEXT UNIQUE NOT NULL,
           name TEXT NOT NULL,
           password TEXT NOT NULL,
+          role INT4 NOT NULL DEFAULT 0,
           created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
