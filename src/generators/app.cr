@@ -1051,7 +1051,7 @@ module Wax::Generators
         COPY shard.yml shard.lock /app/
         WORKDIR /app
         ENV SHARDS_OPTS="--static"
-        RUN shards install --jobs 8
+        RUN shards install --jobs 8 --production
 
         COPY src /app/src/
         COPY views /app/views/
