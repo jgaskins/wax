@@ -280,7 +280,7 @@ module Wax::Generators
               .validate_uniqueness("email") { where(email: email).any? }
               .validate("role must be a valid user role") { role.valid? }
               .valid do
-                insert email: email, name: name, password: password.to_s
+                insert email: email, name: name, password: password.to_s, role: role.value
               end
           end
         end
