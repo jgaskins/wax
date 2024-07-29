@@ -278,7 +278,7 @@ module Wax::Generators
             Result(User).new
               .validate_presence(email: email, name: name)
               .validate_uniqueness("email") { where(email: email).any? }
-              .validate("role must be a valid user role") { role.valid? }
+              .validate("role must be a valid user role") { User::Role.valid? role }
               .valid do
                 insert email: email, name: name, password: password.to_s, role: role.value
               end
