@@ -20,13 +20,23 @@ module Wax::Commands
     end
 
     def call(args : Array(String))
+      name
+      Dir.mkdir_p "public"
+      compile_js = "npx rollup assets/app.js -c"
+      system compile_js
+
       spawn web.run
       spawn worker.run
+      spawn css.run
 
-      spawn system "npx rollup assets/app.js -c --watch"
-      spawn system "npx tailwindcss -i assets/app.css -o public/app.css --watch --minify"
+      begin
+        spawn @javascript = Process.new("#{compile_js} --watch", shell: true)
+        # spawn @css = Process.new("#{compile_css} --watch", shell: true)
 
-      sleep
+        sleep
+      ensure
+        javascript.wait
+      end
     end
 
     getter web : Sentry::ProcessRunner do
@@ -48,6 +58,18 @@ module Wax::Commands
     end
 
     getter! javascript : Process
-    getter! css : Process
+
+    getter css : Sentry::ProcessRunner do
+      Sentry::ProcessRunner.new(
+        display_name: "#{name} CSS builder",
+        build_command: "node_modules/.bin/tailwindcss -i assets/app.css -o public/app.css --minify",
+        run_command: "true",
+        files: %w[
+          src/**/*.cr
+          views/**/*.ecr
+          assets/**/*.css
+        ],
+      )
+    end
   end
 end
