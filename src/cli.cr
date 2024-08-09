@@ -1,8 +1,11 @@
 require "option_parser"
 require "levenshtein"
+require "log"
 
 require "./commands/generate"
 require "./commands/serve"
+
+Log.setup_from_env default_level: :info
 
 module Wax
   class CLI
