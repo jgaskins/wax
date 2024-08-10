@@ -4,6 +4,7 @@ require "log"
 
 require "./commands/generate"
 require "./commands/serve"
+require "./commands/ai"
 
 Log.setup_from_env default_level: :info
 
@@ -14,6 +15,7 @@ module Wax
       G
       Serve
       S
+      AI
     end
 
     def self.call(args = ARGV)
@@ -35,6 +37,8 @@ module Wax
             Commands::Generate.call subcommands
           in .serve?, .s?
             Commands::Serve.call subcommands
+          in .ai?
+            Commands::AI.call subcommands
           end
         end
 
