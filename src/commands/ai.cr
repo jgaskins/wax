@@ -15,7 +15,7 @@ module Wax::Commands::AI
     prompt = args.first
 
     # TODO: Figure out how to reduce the necessary context
-    files = Dir["src/**/*.cr", "views/**/*.ecr", "spec/**/*_spec.cr"].map do |filename|
+    files = Dir["README.md", "src/**/*.cr", "views/**/*.ecr", "spec/**/*_spec.cr"].map do |filename|
       FileData.new(
         path: filename.lchop(ENV["PWD"]),
         contents: File.read(filename),
