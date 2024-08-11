@@ -82,7 +82,7 @@ module Wax::Commands::AI
 
     def self.description
       <<-DESCRIPTION
-        Write or rewrite a set of files in the local git repository.
+        Write or rewrite a list of files in the local git repository. You should write as many files as you need to at the same time.
         DESCRIPTION
     end
 
