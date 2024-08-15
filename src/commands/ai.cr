@@ -41,7 +41,7 @@ module Wax::Commands::AI
       messages: [
         Anthropic::Message.new(content: Array(Anthropic::MessageContent){
           Anthropic::Text.new(file_contents),
-          Anthropic::Text.new(prompt),
+          Anthropic::Text.new(prompt, cache_control: Anthropic::CacheControl.new),
         }),
       ],
       tools: [
@@ -55,6 +55,7 @@ module Wax::Commands::AI
         File.read("#{__DIR__}/../../ai/prompts/wax.md"),
         "The current time is #{Time.utc.to_rfc3339(fraction_digits: 9)}",
       }.join("\n\n"),
+      cache_prompts: true,
     )
   end
 
