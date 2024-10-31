@@ -2,6 +2,7 @@ require "option_parser"
 require "levenshtein"
 require "log"
 
+require "./commands/config"
 require "./commands/generate"
 require "./commands/serve"
 require "./commands/ai"
@@ -16,6 +17,8 @@ module Wax
       Serve
       S
       AI
+      Config
+      CFG
     end
 
     def self.call(args = ARGV)
@@ -33,6 +36,8 @@ module Wax
               STDERR.puts "Did you mean `#{possible_name}`?"
             end
             exit 1
+          in .config?, .cfg?
+            Commands::Config.call subcommands
           in .generate?, .g?
             Commands::Generate.call subcommands
           in .serve?, .s?

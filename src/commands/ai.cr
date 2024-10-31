@@ -28,8 +28,10 @@ module Wax::Commands::AI
 
       XML.build_fragment str do |xml|
         files.each do |file|
-          xml.element "file", path: file.path do
-            xml.text file.contents
+          unless Wax.config.ai.context.exclude.any? { |excluded_path| file.path.starts_with? excluded_path }
+            xml.element "file", path: file.path do
+              xml.text file.contents
+            end
           end
         end
       end
