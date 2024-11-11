@@ -10,6 +10,8 @@ This is an example route:
 
 ```crystal
 # src/routes/posts.cr
+require "./route"
+
 struct Posts
   include Route
 
@@ -74,6 +76,8 @@ Our `Posts` route would be invoked by the `HTTP::Handler` instance (passed to th
 
 ```crystal
 # src/routes/web.cr
+require "./route"
+
 class Web
   include HTTP::Handler
   include Route
@@ -124,6 +128,8 @@ As an example of that last point, you can create a `Likes` route:
 
 ```crystal
 # src/routes/likes.cr
+require "./route"
+
 record Likes, post : Post, current_user : User do
   include Route
 
@@ -145,6 +151,8 @@ And then in the `Posts` route, we can delegate to it:
 
 ```crystal
 # src/routes/posts.cr
+require "./route"
+
 struct Posts
   include Route
 
@@ -229,6 +237,8 @@ This is an example model object:
 
 ```crystal
 # src/models/post.cr
+require "db"
+
 struct Post
   include DB::Serializable
 
@@ -252,6 +262,8 @@ And this is an example query object for that model:
 
 ```crystal
 # src/queries/post.cr
+require "./query"
+
 struct PostQuery < Interro::QueryBuilder(Post)
   table "posts"
 
