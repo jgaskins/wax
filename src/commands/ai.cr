@@ -11,7 +11,7 @@ module Wax::Commands::AI
       STDERR.puts "Must supply a prompt"
       exit 1
     end
-    puts "Analyzing the repo to determine how to accomplish this."
+    puts "Analyzing the repo to determine how to accomplish this..."
     prompt = args.first
 
     files = Dir[
@@ -51,8 +51,7 @@ module Wax::Commands::AI
         WriteFiles,
         DeleteFiles,
       ],
-      max_tokens: 8192, # Try to fit more complex code generation into a single request so we can run fewer requests
-      # max_tokens: 4096,
+      max_tokens: 8192,
       temperature: 0,
       system: {
         File.read("#{__DIR__}/../../ai/prompts/wax.md"),
@@ -115,7 +114,10 @@ module Wax::Commands::AI
       files.each do |file|
         puts "Writing #{file.path}..."
         ::Dir.mkdir_p ::File.dirname(file.path)
-        ::File.write file.path, file.contents
+        # Claude doesn't put a newline at the end of the file, so we do it to
+        # GitHub doesn't do that annoying "no newline at end of file" thing when
+        # it renders the diff.
+        ::File.write file.path, "#{file.contents}\n"
       end
       {status: "success"}
     end
