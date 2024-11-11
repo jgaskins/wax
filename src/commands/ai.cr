@@ -76,7 +76,7 @@ module Wax::Commands::AI
 
     def self.description
       <<-DESCRIPTION
-        Get the contents of the files at the specified paths. You have the list of files available to you, so you can get the contents of them with this tool to see what's inside them.
+        Get the contents of the files at the specified paths. You have the list of files available to you, so you can get the contents of them with this tool to see what's inside them. It can be really useful to fetch files related to ones you need to work on so you can follow existing conventions!
         DESCRIPTION
     end
 
