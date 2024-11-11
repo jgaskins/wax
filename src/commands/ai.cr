@@ -83,6 +83,7 @@ module Wax::Commands::AI
 
     def call
       paths.each_with_object({} of String => String) do |path, hash|
+        puts "Reading #{path}..."
         hash[path] = File.read(path)
       end
     end
