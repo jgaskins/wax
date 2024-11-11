@@ -14,12 +14,14 @@ module Wax::Commands::AI
     puts "Analyzing the repo to determine how to accomplish this."
     prompt = args.first
 
-    # TODO: Figure out how to reduce the necessary context
-    files = Dir["README.md", "src/**/*.cr", "views/**/*.ecr", "spec/**/*_spec.cr", "db/migrations/**/*.sql"].map do |filename|
-      FileData.new(
-        path: filename.lchop(ENV["PWD"]),
-        contents: File.read(filename),
-      )
+    files = Dir[
+      "README.md",
+      "src/**/*.cr",
+      "views/**/*.ecr",
+      "spec/**/*_spec.cr",
+      "db/migrations/**/*.sql",
+    ].map do |filename|
+      FileData.new(path: filename.lchop(ENV["PWD"]))
     end
 
     file_contents = String.build do |str|
@@ -29,9 +31,7 @@ module Wax::Commands::AI
       XML.build_fragment str do |xml|
         files.each do |file|
           unless Wax.config.ai.context.exclude.any? { |excluded_path| file.path.starts_with? excluded_path }
-            xml.element "file", path: file.path do
-              xml.text file.contents
-            end
+            xml.element "file", path: file.path
           end
         end
       end
@@ -47,6 +47,7 @@ module Wax::Commands::AI
         }),
       ],
       tools: [
+        FetchFileContents,
         WriteFiles,
         DeleteFiles,
       ],
@@ -60,11 +61,32 @@ module Wax::Commands::AI
     ).last
   end
 
-  record FileData, path : String, contents : String do
+  record FileData, path : String do
     include JSON::Serializable
   end
 
   alias Handler = Anthropic::Tool::Handler
+
+  struct FetchFileContents < Handler
+    @[JSON::Field(description: "The path of the files whose contents to fetch.")]
+    getter paths : Array(String)
+
+    def self.name
+      "FetchFileContents"
+    end
+
+    def self.description
+      <<-DESCRIPTION
+        Get the contents of the files at the specified paths. You have the list of files available to you, so you can get the contents of them with this tool to see what's inside them.
+        DESCRIPTION
+    end
+
+    def call
+      paths.each_with_object({} of String => String) do |path, hash|
+        hash[path] = File.read(path)
+      end
+    end
+  end
 
   struct WriteFiles < Handler
     @[JSON::Field(description: "The list of files to write. All files will be written at the same time.")]
