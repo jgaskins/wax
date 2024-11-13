@@ -114,10 +114,10 @@ module Wax::Commands::AI
       files.each do |file|
         puts "Writing #{file.path}..."
         ::Dir.mkdir_p ::File.dirname(file.path)
-        # Claude doesn't put a newline at the end of the file, so we do it to
-        # git and GitHub don't do that annoying "no newline at end of file"
-        # thing when rendering the diff.
-        ::File.write file.path, "#{file.contents}\n"
+        # Claude doesn't always put a newline at the end of the file, so we do
+        # it so git and GitHub don't do that annoying "no newline at end of
+        # file" thing when rendering the diff.
+        ::File.write file.path, "#{file.contents.rstrip}\n"
       end
       {status: "success"}
     end
