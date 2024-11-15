@@ -247,6 +247,8 @@ The `Route` mixin also includes an `Armature::Form::Helper` mixin for routes tha
 
 This `form` helper is a macro that will automatically render to the `response` as well as pick up the CSRF token from the `session` and add an `<input type="hidden" name="_authenticity_token">` for CSRF protection. If your block variables are called `response` and `session`, you don't need to supply them to the macro.
 
+It's important to note that `case` expressions can't be used in templates. You should extract those into methods on the routes that render them.
+
 This is an example model object:
 
 ```crystal
