@@ -64,6 +64,8 @@ module Wax::Generators
         *.dwarf
         .env
         node_modules
+        /public/app*.js
+        /public/app*.css
 
         EOF
 
