@@ -7,12 +7,11 @@ module Wax::Commands::AI
   Claude = Anthropic::Client.new
 
   def call(args : Array(String))
-    if args.empty?
-      STDERR.puts "Must supply a prompt"
-      exit 1
+    prompt = args.first do
+      STDERR.puts "Reading prompt from STDIN"
+      STDIN.gets_to_end
     end
     puts "Analyzing the repo to determine how to accomplish this..."
-    prompt = args.first
 
     files = Dir[
       "README.md",
