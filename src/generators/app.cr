@@ -1050,6 +1050,19 @@ module Wax::Generators
         RUN crystal build -o bin/web --static --release --stats --progress src/web.cr
         RUN crystal build -o bin/worker --static --release --stats --progress src/worker.cr
 
+        FROM node:23.2-slim AS assets-builder
+
+        WORKDIR /app/
+        COPY package.json package-lock.json rollup.config.mjs postcss.config.js tailwind.config.js /app/
+        COPY assets/ assets/
+        COPY src/ src/
+        COPY views/ views/
+
+        RUN npm install
+        RUN node_modules/.bin/tailwindcss -i assets/app.css -o public/app.css --minify
+        RUN npx rollup assets/app.js -c
+        RUN ls public
+
         # Deployable container
         FROM alpine
 
@@ -1057,6 +1070,7 @@ module Wax::Generators
 
         COPY --from=builder /app/bin/web /app/bin/worker /app/bin/interro-migration /app/bin/
         COPY --from=builder /app/db/ /app/db/
+        COPY --from=assets-builder /app/public/app.css /app/public/app.js /app/public/
         WORKDIR /app
 
         CMD ["/app/bin/web"]
