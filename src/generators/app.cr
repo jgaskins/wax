@@ -396,6 +396,7 @@ module Wax::Generators
         require "armature/route"
         require "armature/form"
         require "wax/load"
+        require "interro/validations"
 
         src "config/cache"
 
@@ -403,6 +404,7 @@ module Wax::Generators
           include Armature::Route
           include Armature::Form::Helper
           include Armature::Cache
+          include Interro::Validations
 
           # Add helper methods here
         end
