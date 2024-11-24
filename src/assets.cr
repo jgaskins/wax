@@ -1,22 +1,33 @@
 require "digest/sha256"
+require "http/server/handler"
 
 class Wax::Assets
+  include HTTP::Handler
   getter name_map = {} of String => CacheEntry
+  getter content_cache = {} of String => CacheEntry
 
-  @path : String
+  @source : String
+  @target : String
   @cache_duration : Time::Span
 
   def initialize(
-    @path = "assets",
+    @source = "assets",
+    @target = "public",
     cache_for @cache_duration = ENV.fetch("ASSET_CACHE_DURATION_SECONDS", "86400").to_f.seconds
   )
+    Dir["#{target}/**/*"].each do |path|
+      # Eagerly evaluate all of the unfingerprinted files
+      unless path.matches? /-[0-9a-f]{64}\./
+        self[path.lchop(target)]?
+      end
+    end
   end
 
   def []?(key : String)
     entry = name_map.fetch(key) do
       value = hash(key)
       name_map[key] = CacheEntry.new(value, expires_at: @cache_duration.from_now)
-      File.copy "public/#{key}", "public/#{value}"
+      File.copy "#{@target}/#{key}", "#{@target}/#{value}"
       # We just created this, so we know it's fresh and we can just return it
       return value
     end
@@ -30,9 +41,30 @@ class Wax::Assets
   end
 
   def hash(key : String)
-    source = "public/#{key}"
+    source = "#{@target}/#{key}"
     hash = Digest::SHA256.new.file(source).hexfinal
-    "#{File.dirname(source).lchop("public")}/#{File.basename(source).rchop(File.extname(source))}-#{hash}#{File.extname(source)}"
+    "#{File.dirname(source).lchop(@target)}/#{File.basename(source).rchop(File.extname(source))}-#{hash}#{File.extname(source)}"
+  end
+
+  def call(context : HTTP::Server::Context) : Bool
+    request = context.request
+    file_path = "#{@target}/#{request.path}"
+
+    if request.method == "GET" && File.exists?(file_path)
+      context.response << content_cache
+        .fetch(file_path) do
+          content_cache[file_path] = CacheEntry.new(
+            value: File.read(file_path),
+            expires_at: @cache_duration.from_now,
+          )
+        end
+        .value
+
+      true
+    else
+      call_next context
+      false
+    end
   end
 
   record CacheEntry,
