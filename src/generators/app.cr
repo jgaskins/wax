@@ -252,6 +252,20 @@ module Wax::Generators
 
         abstract struct Query(T) < Interro::QueryBuilder(T)
           include Interro::Validations
+
+          module Find(ID, Model)
+            def find!(id : ID) : Model
+              find(id) || raise MissingRecord.new("No #{Model} record with id #{id.inspect} found.")
+            end
+
+            def find(id : ID) : Model?
+              with_id(id).first?
+            end
+
+            def with_id(id : ID)
+              where id: id
+            end
+          end
         end
 
         EOF
