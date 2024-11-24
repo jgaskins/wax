@@ -34,6 +34,10 @@ dependencies:
   msgpack:
     github: crystal-community/msgpack-crystal
 
+development_dependencies:
+  hot_topic:
+    github: jgaskins/hot_topic
+
 scripts:
   postinstall: scripts/build
 executables:
