@@ -982,6 +982,40 @@ module Wax::Generators
         require "wax-spec/factory"
 
         abstract struct Factory < Wax::Factory
+          include Interro::Validations
+        end
+
+        EOF
+
+      file "spec/factories/user.cr", <<-EOF
+        require "./factory"
+
+        Factory.define User do
+          # This way we only pay the BCrypt cost once per test run rather than
+          # once per user created.
+          DEFAULT_PASSWORD = BCrypt::Password.create("password", cost: 4)
+
+          def create(
+            *,
+            email : String = "user.\#{UUID.v7}@example.com",
+            name : String = "User \#{UUID.v7}",
+            password : BCrypt::Password = DEFAULT_PASSWORD,
+            query : UserQuery = UserQuery.new,
+          ) : User
+            user = query.create(
+              email: email,
+              name: name,
+              password: password,
+              role: role,
+            )
+
+            case user
+            in User
+              user
+            in Failure
+              invalid! user
+            end
+          end
         end
 
         EOF
