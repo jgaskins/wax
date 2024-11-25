@@ -1077,7 +1077,6 @@ module Wax::Generators
         RUN npm install
         RUN node_modules/.bin/tailwindcss -i assets/app.css -o public/app.css --minify
         RUN npx rollup assets/app.js -c
-        RUN ls public
 
         # Deployable container
         FROM alpine
