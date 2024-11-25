@@ -255,7 +255,7 @@ module Wax::Generators
 
           module Find(ID, Model)
             def find!(id : ID) : Model
-              find(id) || raise MissingRecord.new("No #{Model} record with id #{id.inspect} found.")
+              find(id) || raise MissingRecord.new("No \#{Model} record with id \#{id.inspect} found.")
             end
 
             def find(id : ID) : Model?
