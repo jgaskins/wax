@@ -1016,6 +1016,7 @@ module Wax::Generators
             email : String = "user.\#{UUID.v7}@example.com",
             name : String = "User \#{UUID.v7}",
             password : BCrypt::Password = DEFAULT_PASSWORD,
+            role : User::Role = :member,
             query : UserQuery = UserQuery.new,
           ) : User
             user = query.create(
