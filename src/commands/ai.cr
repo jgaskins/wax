@@ -75,7 +75,7 @@ module Wax::Commands::AI
 
     def self.description
       <<-DESCRIPTION
-        Get the contents of the files at the specified paths. You have the list of files available to you, so you can get the contents of them with this tool to see what's inside them. It can be really useful to fetch files related to ones you need to work on so you can follow existing conventions!
+        Get the contents of the files at the specified paths. You have the list of files available to you, so you can get the contents of them with this tool to see what's inside them. It can be really useful to fetch files that are similar to ones you need to work on so you can follow existing conventions! For example, when you're working with routes, it can be useful to read a few other route files to see what conventions are in use.
         DESCRIPTION
     end
 
@@ -105,7 +105,7 @@ module Wax::Commands::AI
 
     def self.description
       <<-DESCRIPTION
-        Write or rewrite a list of files in the local git repository. You should write as many files as you need to at the same time.
+        Write or rewrite a list of files in the local git repository. You should write as many files as you need to at the same time. Before modifying any new files, you should read the existing version. You should also read other similar files to ensure you use existing code conventions.
         DESCRIPTION
     end
 
