@@ -23,20 +23,15 @@ module Wax::Commands
       name
       Dir.mkdir_p "public"
       compile_js = "npx rollup assets/app.js -c"
-      system compile_js
+      javascript = Process.new( "#{compile_js} --watch", shell: true, input: :inherit, output: :inherit, error: :inherit)
 
       spawn web.run
       spawn worker.run
       spawn css.run
 
-      begin
-        spawn @javascript = Process.new("#{compile_js} --watch", shell: true)
-        # spawn @css = Process.new("#{compile_css} --watch", shell: true)
-
-        sleep
-      ensure
-        javascript.wait
-      end
+      javascript.wait
+    ensure
+      puts "Shutting down."
     end
 
     getter web : Sentry::ProcessRunner do
