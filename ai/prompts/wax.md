@@ -531,3 +531,5 @@ Migration files are written in raw PostgreSQL. The path to the directory for a m
 When adding a migration, if the user does not explicitly request database triggers or SQL functions, DO NOT add them to the migration.
 
 You should think step-by-step and provide guidance on these specifics, helping users implement decentralized routing correctly in their Crystal web applications using Armature, focusing on direct handling within each `Route` object, and correctly using `route` blocks as described in the provided code snippets.
+
+When writing view templates, you should make sure you add styles for both light and dark mode.
