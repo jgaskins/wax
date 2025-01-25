@@ -637,6 +637,214 @@ module Wax::Generators
 
         EOF
 
+      file "src/components/button.cr", <<-EOF
+        require "armature/component"
+
+        struct Button < Armature::Component
+          getter label : String
+          getter type : Type
+          getter variant : Variant
+          getter size : Size
+          @class : String?
+          getter? disabled : Bool
+          getter? full_width : Bool
+
+          def initialize(
+            @label,
+            *,
+            @type = :button,
+            @variant = :primary,
+            @size = :medium,
+            @class = nil,
+            @disabled = false,
+            @full_width = false
+          )
+          end
+
+          def_to_s "components/button"
+
+          def class_name
+            @class
+          end
+
+          def attributes
+            Attributes.new(
+              type: type,
+              disabled: disabled?
+            )
+          end
+
+          def variant_classes : String
+            case variant
+            in .primary?
+              "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+            in .secondary?
+              "bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+            in .danger?
+              "bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+            end
+          end
+
+          def size_classes : String
+            case size
+            in .small?
+              "px-2.5 py-1.5 text-xs"
+            in .medium?
+              "px-4 py-2 text-sm"
+            in .large?
+              "px-6 py-3 text-base"
+            end
+          end
+
+          def width_classes : String
+            full_width? ? "w-full" : "w-auto"
+          end
+
+          enum Type
+            BUTTON
+            SUBMIT
+            RESET
+          end
+
+          enum Variant
+            PRIMARY
+            SECONDARY
+            DANGER
+          end
+
+          enum Size
+            SMALL
+            MEDIUM
+            LARGE
+          end
+
+          struct Attributes(T)
+            def self.new(**attrs)
+              new attrs
+            end
+
+            def initialize(@attrs : T)
+            end
+
+            def to_s(io) : Nil
+              @attrs.each do |key, value|
+                case value
+                when nil, false
+                  # Do nothing
+                when true
+                  io << ' ' << key.to_s
+                else
+                  io << ' ' << key << %{="}
+                  HTML.escape value.to_s, io
+                  io << '"'
+                end
+              end
+            end
+          end
+        end
+
+        EOF
+
+      view "components/button", <<-EOF
+        <button
+          <%== attributes %>
+          class="inline-flex items-center justify-center rounded-md font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors duration-200 <%= variant_classes %> <%= size_classes %> <%= width_classes %> <%= class_name %> disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <%= @label %>
+        </button>
+
+        EOF
+
+      file "src/components/textarea.cr", <<-EOF
+        require "armature/component"
+
+        struct TextArea < Armature::Component
+          getter name : String
+          getter label : String
+          getter id : String?
+          @class : String?
+          getter placeholder : String?
+          getter value : String?
+          getter rows : Int32
+          getter? autofocus : Bool
+          getter? required : Bool
+
+          def initialize(
+            @name,
+            *,
+            @label = name.capitalize,
+            @id = nil,
+            @class = nil,
+            @placeholder = nil,
+            @value = nil,
+            @rows = 3,
+            @autofocus = false,
+            @required = false
+          )
+          end
+
+          def_to_s "components/textarea"
+
+          def class_name
+            @class
+          end
+
+          def attributes
+            Attributes.new(
+              name: name,
+              id: id,
+              placeholder: placeholder,
+              rows: rows,
+              autofocus: autofocus?,
+              required: required?,
+            )
+          end
+
+          struct Attributes(T)
+            def self.new(**attrs)
+              new attrs
+            end
+
+            def initialize(@attrs : T)
+            end
+
+            def to_s(io) : Nil
+              @attrs.each do |key, value|
+                case value
+                when nil, false
+                  # Do nothing
+                when true
+                  io << ' ' << key.to_s
+                else
+                  io << ' ' << key << %{="}
+                  HTML.escape value.to_s, io
+                  io << '"'
+                end
+              end
+            end
+          end
+        end
+
+        EOF
+
+      view "components/textarea", <<-EOF
+        <div class="mb-4">
+          <label class="block">
+            <span class="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">
+              <%= @label %>
+              <% if required? %>
+                <span class="text-red-600 dark:text-red-400" aria-hidden="true">*</span>
+              <% end %>
+            </span>
+            <textarea
+              <%== attributes %>
+              class="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:border-gray-200 disabled:shadow-none resize-y <%= class_name %>"
+            ><%= value %></textarea>
+          </label>
+        </div>
+
+        EOF
+
       file "src/routes/signup.cr", <<-EOF
         require "./route"
         require "../bcrypt"
