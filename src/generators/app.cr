@@ -262,7 +262,7 @@ module Wax::Generators
               with_id(id).first?
             end
 
-            def with_id(id : ID)
+            def with_id(id : ID | Array(ID))
               where id: id
             end
           end
