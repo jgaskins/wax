@@ -538,15 +538,20 @@ module Wax::Generators
           getter label : String
           getter id : String?
           @class : String?
+          getter placeholder : String?
+          getter value : String?
           getter? autofocus : Bool
           getter? required : Bool
 
           def initialize(
             @name,
             @type = :text,
+            *,
             @label = name.capitalize,
             @id = nil,
             @class = nil,
+            @placeholder = nil,
+            @value = nil,
             @autofocus = false,
             @required = false
           )
@@ -563,7 +568,8 @@ module Wax::Generators
               name: name,
               type: type,
               id: id,
-              class: @class,
+              placeholder: placeholder,
+              value: value,
               autofocus: autofocus?,
               required: required?,
             )
@@ -576,15 +582,13 @@ module Wax::Generators
             HIDDEN
             DATETIME_LOCAL
 
-            def to_s(io)
-              to_s.each_char do |ch|
-                case ch
-                when '_'
-                  io << '-'
-                else
-                  io << ch.downcase
+            def to_s : String
+              \{% for member in @type.constants %}
+                if value == \{{@type.constant(member)}}
+                  return \{{member.stringify.downcase.tr("_", "-")}}
                 end
-              end
+              \{% end %}
+              return value.to_s
             end
           end
 
@@ -616,10 +620,18 @@ module Wax::Generators
         EOF
 
       view "components/input", <<-EOF
-        <div>
-          <label>
-            <%= @label %>
-            <input<%== attributes %>>
+        <div class="mb-4">
+          <label class="block">
+            <span class="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">
+              <%= @label %>
+              <% if required? %>
+                <span class="text-red-600 dark:text-red-400" aria-hidden="true">*</span>
+              <% end %>
+            </span>
+            <input
+              <%== attributes %>
+              class="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:border-gray-200 disabled:shadow-none <%= class_name %>"
+            >
           </label>
         </div>
 
@@ -806,7 +818,7 @@ module Wax::Generators
           <link rel="stylesheet" href="<%= assets["app.css"]? %>">
           <script src="<%= assets["app.js"]? %>"></script>
         </head>
-        <body class="bg-white dark:bg-gray-900">
+        <body class="bg-white dark:bg-gray-900 text-black dark:text-white">
           <header class="bg-white dark:bg-gray-900">
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
               <h1 class="text-3xl font-bold leading-tight text-gray-900 dark:text-white">
