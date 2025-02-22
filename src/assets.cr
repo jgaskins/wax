@@ -27,7 +27,6 @@ class Wax::Assets
     entry = name_map.fetch(key) do
       value = hash(key)
       name_map[key] = CacheEntry.new(value, expires_at: @cache_duration.from_now)
-      File.copy "#{@target}/#{key}", "#{@target}/#{value}"
       # We just created this, so we know it's fresh and we can just return it
       return value
     end
@@ -42,8 +41,15 @@ class Wax::Assets
 
   def hash(key : String)
     source = "#{@target}/#{key}"
+    unless File.exists? source
+      source = "#{@source}/#{key}"
+    end
     hash = Digest::SHA256.new.file(source).hexfinal
-    "#{File.dirname(source).lchop(@target)}/#{File.basename(source).rchop(File.extname(source))}-#{hash}#{File.extname(source)}"
+    value = "#{File.dirname(source).lchop(@target).lchop(@source)}/#{File.basename(source).rchop(File.extname(source))}-#{hash}#{File.extname(source)}"
+
+    File.copy source, "#{@target}/#{value}"
+
+    value
   end
 
   def call(context : HTTP::Server::Context) : Bool

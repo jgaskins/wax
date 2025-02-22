@@ -1226,6 +1226,8 @@ module Wax::Generators
       file "spec/factories/user.cr", <<-EOF
         require "./factory"
 
+        src "queries/user"
+
         Factory.define User do
           # This way we only pay the BCrypt cost once per test run rather than
           # once per user created.
