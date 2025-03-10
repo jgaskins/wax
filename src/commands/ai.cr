@@ -88,14 +88,14 @@ module Wax::Commands::AI
   end
 
   struct WriteFiles < Handler
-    @[JSON::Field(description: "The list of files to write. All files will be written at the same time.")]
+    @[JSON::Field(description: "The list of files to write. All files will be written at the same time. This MUST be an array of file objects (NOT strings!) even when there is only one to be written.")]
     getter files : Array(File)
 
     struct File
       include JSON::Serializable
       @[JSON::Field(description: "The path of the file to write or rewrite")]
       getter path : String
-      @[JSON::Field(description: "The new or updated contents of the file. This must be the complete contents. It must NOT be a fragment or contain any placeholder content.")]
+      @[JSON::Field(description: "The new or updated contents of the file. This must be the complete contents. It MUST NOT be a fragment or contain any placeholder content.")]
       getter contents : String
     end
 
