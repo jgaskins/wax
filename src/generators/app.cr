@@ -349,7 +349,6 @@ module Wax::Generators
           getter id : UUID
           getter email : String
           getter name : String
-          @[DB::Field(converter: BCrypt::Password)]
           getter password : BCrypt::Password
           getter role : Role
           getter created_at : Time
