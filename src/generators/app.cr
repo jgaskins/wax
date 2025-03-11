@@ -342,8 +342,8 @@ module Wax::Generators
 
       file "src/models/user.cr", <<-EOF
         require "./model"
-
-        src "bcrypt"
+        require "bcrypt"
+        require "bcrypt/db"
 
         struct User < Model
           getter id : UUID
@@ -511,19 +511,6 @@ module Wax::Generators
             route context do |r, response, session|
               r.root { r.get { render "home/index" } }
             end
-          end
-        end
-
-        EOF
-
-      file "src/bcrypt.cr", <<-EOF
-        require "crypto/bcrypt/password"
-
-        alias BCrypt = Crypto::Bcrypt
-
-        class BCrypt::Password
-          def self.from_rs(rs : DB::ResultSet)
-            new rs.read(String)
           end
         end
 
@@ -847,8 +834,10 @@ module Wax::Generators
 
       file "src/routes/signup.cr", <<-EOF
         require "./route"
-        require "../bcrypt"
-        require "../components/input"
+        require "bcrypt"
+
+        src "queries/user"
+        src "components/input"
 
         struct Signup
           include Route
@@ -940,8 +929,10 @@ module Wax::Generators
 
       file "src/routes/login.cr", <<-EOF
         require "./route"
-        require "../bcrypt"
-        require "../components/input"
+        require "bcrypt"
+
+        src "queries/user"
+        src "components/input"
 
         struct Login
           include Route
@@ -1225,6 +1216,7 @@ module Wax::Generators
 
       file "spec/factories/user.cr", <<-EOF
         require "./factory"
+        require "bcrypt"
 
         src "queries/user"
 

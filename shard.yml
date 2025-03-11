@@ -20,6 +20,8 @@ dependencies:
     branch: multiple-runners
   anthropic:
     github: jgaskins/anthropic
+  bcrypt:
+    github: jgaskins/bcrypt
 
   # Including the following so we can fetch them all concurrently. This is not
   # necessary and is just a development optimization.
