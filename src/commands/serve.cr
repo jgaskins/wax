@@ -22,7 +22,7 @@ module Wax::Commands
     def call(args : Array(String))
       name
       Dir.mkdir_p "public"
-      compile_js = "npx rollup assets/app.js -c"
+      compile_js = "npx rollup assets/app.js -c --yes"
       javascript = Process.new( "#{compile_js} --watch", shell: true, input: :inherit, output: :inherit, error: :inherit)
 
       spawn web.run
