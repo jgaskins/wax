@@ -1,5 +1,6 @@
 require "digest/sha256"
 require "http/server/handler"
+require "file_utils"
 
 class Wax::Assets
   include HTTP::Handler
@@ -13,7 +14,7 @@ class Wax::Assets
   def initialize(
     @source = "assets",
     @target = "public",
-    cache_for @cache_duration = ENV.fetch("ASSET_CACHE_DURATION_SECONDS", "86400").to_f.seconds
+    cache_for @cache_duration = ENV.fetch("ASSET_CACHE_DURATION_SECONDS", "86400").to_f.seconds,
   )
     Dir["#{target}/**/*"].each do |path|
       # Eagerly evaluate all of the unfingerprinted files
@@ -46,8 +47,10 @@ class Wax::Assets
     end
     hash = Digest::SHA256.new.file(source).hexfinal
     value = "#{File.dirname(source).lchop(@target).lchop(@source)}/#{File.basename(source).rchop(File.extname(source))}-#{hash}#{File.extname(source)}"
+    target = "#{@target}/#{value}"
 
-    File.copy source, "#{@target}/#{value}"
+    FileUtils.mkdir_p File.dirname target
+    File.copy source, target
 
     value
   end
