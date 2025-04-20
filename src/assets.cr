@@ -19,7 +19,10 @@ class Wax::Assets
     Dir["#{target}/**/*"].each do |path|
       # Eagerly evaluate all of the unfingerprinted files
       unless path.matches? /-[0-9a-f]{64}\./
-        self[path.lchop(target)]?
+        path = path.lchop(target)
+        if File.file? path
+          self[path]?
+        end
       end
     end
   end
