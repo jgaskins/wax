@@ -836,6 +836,262 @@ module Wax::Generators
 
         EOF
 
+      file "src/components/component.cr", <<-EOF
+        require "armature/component"
+
+        abstract struct Component < Armature::Component
+          macro define(type, *ivars)
+            record \{{type}} < ::Component\{% for ivar in ivars %}, {{ivar}}{% end %} do
+              \{{yield}}
+              def_to_s "components/\{{type.id.underscore.gsub(/::/, "/").gsub(/\\(\\w+\\)/, "")}}"
+            end
+          end
+        end
+
+        EOF
+
+      file "src/components/select.cr", <<-EOF
+        require "./component"
+
+        struct Select < Component
+          getter name : String
+          getter label : String
+          getter id : String?
+          @class : String?
+          getter? required : Bool
+          getter value : String?
+          getter error : String?
+
+          def initialize(
+            @name,
+            @label = name.capitalize,
+            @id = nil,
+            @class = nil,
+            @required = false,
+            @value = nil,
+            @error = nil,
+            &@block : self ->
+          )
+          end
+
+          def option(value : String? = nil, selected : Bool = selected?(value), &block : Option ->) : Option
+            Option.new(value, selected: selected, &block)
+          end
+
+          def option(label : String, value : String? = nil, selected : Bool = selected?(value || label)) : Option
+            Option.new(label, value, selected: selected)
+          end
+
+          def selected?(value : String)
+            value == @value
+          end
+
+          def selected?(value : Nil)
+            false
+          end
+
+          def class_name
+            @class
+          end
+
+          def attributes
+            Attributes.new(
+              name: name,
+              id: id,
+              "aria-invalid": !!error,
+              "aria-describedby": error ? "#{name}-error" : nil,
+              required: required?
+            )
+          end
+
+          def_to_s "components/select"
+
+          struct Option < Component
+            getter label : String?
+            getter value : String?
+            getter? selected : Bool
+            getter label_block : self ->
+
+            def initialize(@label : String, @value, @selected = false)
+              @label_block = ->(option : self) { }
+            end
+
+            def initialize(@value, *, @selected = false, &@label_block : self ->)
+            end
+
+            def_to_s "components/select/option"
+          end
+
+          # Reuse the same Attributes struct pattern from Input/TextArea
+          struct Attributes(T)
+            def self.new(**attrs)
+              new attrs
+            end
+
+            def initialize(@attrs : T)
+            end
+
+            def to_s(io) : Nil
+              @attrs.each do |key, value|
+                case value
+                when nil, false
+                  # Do nothing
+                when true
+                  io << ' ' << key.to_s
+                else
+                  io << ' ' << key << %{="}
+                  HTML.escape value.to_s, io
+                  io << '"'
+                end
+              end
+            end
+          end
+        end
+
+        EOF
+
+      view "components/select", <<-EOF
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+            <%= @label %>
+            <%- if required? -%>
+              <span class="text-red-500 dark:text-red-400">*</span>
+            <%- end -%>
+          </label>
+          <select
+            <%-== attributes -%>
+            class="w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 ease-in-out <%= class_name %>"
+          >
+            <%- @block.call self -%>
+          </select>
+          <%- if error = @error -%>
+            <p class="mt-1 text-sm text-red-600 dark:text-red-400"><%= error %></p>
+          <%- end -%>
+        </div>
+
+        EOF
+
+      view "components/select/option", <<-EOF
+        <option
+          <%- if value %> value="<%= value %>"<% end -%>
+          <%- if selected? %> selected<% end -%>
+        >
+          <%= label || label_block.call self -%>
+        </option>
+
+        EOF
+
+      file "src/components/form.cr", <<-EOF
+        require "./component"
+        src "components/input"
+        src "components/textarea"
+        src "components/select"
+        src "components/button"
+
+        struct Form < Component
+          alias Attributes = Hash(String, String)
+
+          getter method : String
+          getter action : String
+          getter session : Armature::Session
+          @attributes : Attributes?
+
+          def initialize(@method, @action, @session, @attributes = nil, &@block : self ->)
+          end
+
+          def input(
+            name : String,
+            type : Input::Type = :text,
+            label : String = name.capitalize,
+            id : String? = nil,
+            required : Bool = false,
+            autofocus : Bool = false,
+            value : String? = nil,
+            min : String? = nil,
+            max : String? = nil,
+            error : String? = nil,
+          ) : Input
+            Input.new name,
+              type: type,
+              label: label,
+              id: id,
+              required: required,
+              autofocus: autofocus,
+              value: value,
+              min: min,
+              max: max,
+              error: error
+          end
+
+          def text_area(
+            name : String,
+            label : String = name.capitalize,
+            id : String? = nil,
+            required : Bool = false,
+            autofocus : Bool = false,
+            value : String? = nil,
+            error : String? = nil,
+          ) : TextArea
+            TextArea.new name,
+              label: label,
+              id: id,
+              required: required,
+              autofocus: autofocus,
+              value: value,
+              error: error
+          end
+
+          def select(
+            name : String,
+            label : String = name.capitalize,
+            value : String? = nil,
+            required : Bool = false,
+            &block : Select ->
+          ) : Select
+            Select.new(name, label: label, value: value, required: required, &block)
+          end
+
+          def submit(message : String = "Save")
+            Button.new message
+          end
+
+          def attributes
+            if attrs = @attributes
+              AttributeRenderer.new(attrs)
+            end
+          end
+
+          def content
+            @block.call self
+          end
+
+          def_to_s "components/form"
+
+          private struct AttributeRenderer < Component
+            def initialize(@attrs : Attributes)
+            end
+
+            def_to_s "components/form/attribute_renderer"
+          end
+        end
+
+        EOF
+
+      view "components/form", <<-EOF
+        <form
+          <%- if method %>method="<%= method %>"<% end -%>
+          <%- if action %> action="<%= action %>"<% end -%>
+          <%- attributes.try &.each do |attr, value| -%>
+            <%= attr %>="<%= value %>"
+          <%- end -%>
+        >
+          <%- if session = self.session -%>
+            <input type="hidden" name="_authenticity_token" value="<%= Armature::Form::Helper.authenticity_token_for(session) %>">
+          <%- end -%>
+          <% @block.call self %>
+        </form>
+        EOF
+
       file "src/routes/signup.cr", <<-EOF
         require "./route"
         require "bcrypt"
