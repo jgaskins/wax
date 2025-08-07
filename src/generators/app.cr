@@ -167,7 +167,7 @@ module Wax::Generators
         require "./env"
 
         Config.define redis : Redis::Client do
-          Redis::Client.from_env("REDIS_URL")
+          Redis::Client.new(log: Log.for("redis", level: :info))
         end
 
         EOF
