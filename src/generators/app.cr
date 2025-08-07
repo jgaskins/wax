@@ -90,7 +90,12 @@ module Wax::Generators
         REDIS_URL="redis:///"
         HOST=127.0.0.1
         PORT=3200
+
+        # No asset caching in development
         ASSET_CACHE_DURATION_SECONDS=0
+
+        # Defaults to 10, but development doesn't need that much concurrency
+        CONVEYOR_CONCURRENCY=1
 
         EOF
 
