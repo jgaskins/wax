@@ -80,9 +80,19 @@ module Wax::Commands::AI
     end
 
     def call
-      paths.each_with_object({} of String => String) do |path, hash|
+      paths.map do |path|
         puts "Reading #{path}..."
-        hash[path] = File.read(path)
+        if File.exists? path
+          {
+            path:     path,
+            contents: File.read(path),
+          }
+        else
+          {
+            path:  path,
+            error: "File does not exist",
+          }
+        end
       end
     end
   end
