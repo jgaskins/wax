@@ -531,6 +531,9 @@ module Wax::Generators
           @class : String?
           getter placeholder : String?
           getter value : String?
+          getter min : String?
+          getter max : String?
+          getter error : String?
           getter? autofocus : Bool
           getter? required : Bool
 
@@ -543,6 +546,9 @@ module Wax::Generators
             @class = nil,
             @placeholder = nil,
             @value = nil,
+            @min = nil,
+            @max = nil,
+            @error = nil,
             @autofocus = false,
             @required = false
           )
@@ -1081,7 +1087,7 @@ module Wax::Generators
         <form
           <%- if method %>method="<%= method %>"<% end -%>
           <%- if action %> action="<%= action %>"<% end -%>
-          <%- attributes.try &.each do |attr, value| -%>
+          <%- @attributes.try &.each do |attr, value| -%>
             <%= attr %>="<%= value %>"
           <%- end -%>
         >
