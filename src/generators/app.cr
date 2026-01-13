@@ -1058,7 +1058,7 @@ module Wax::Generators
           end
 
           def submit(message : String = "Save")
-            Button.new message type: :submit
+            Button.new message, type: :submit
           end
 
           def attributes
