@@ -32,7 +32,7 @@ dependencies:
   pg:
     github: will/crystal-pg
   dotenv:
-    github: jgaskins/cr-dotenv
+    github: gdotdesign/cr-dotenv
   msgpack:
     github: crystal-community/msgpack-crystal
 
