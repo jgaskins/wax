@@ -1341,6 +1341,7 @@ module Wax::Generators
             "autoprefixer": "^10.4.17",
             "postcss": "^8.4.33",
             "postcss-cli": "^11.0.0",
+            "rollup": "^4.59.0",
             "tailwindcss": "^3.4.1"
           },
           "dependencies": {
