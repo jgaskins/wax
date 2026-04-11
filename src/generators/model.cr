@@ -86,6 +86,7 @@ module Wax::Generators
     def call
       model_file
       query_file
+      factory_file
       migration_files
     end
 
@@ -111,6 +112,21 @@ module Wax::Generators
         string.puts
         string.puts "struct #{model_name}Query < Query(#{model_name})"
         string.puts %{  table "#{table_name}"}
+        string.puts
+        string.puts "  def create("
+        required_properties.each do |property|
+          string.puts "    #{property.name} : #{property.crystal_type},"
+        end
+        string.puts "  ) : #{model_name}"
+        string.puts "    Result(#{model_name}).new"
+        string.puts "      .valid do"
+        string.puts "        insert("
+        required_properties.each do |property|
+          string.puts "          #{property.name}: #{property.name}"
+        end
+        string.puts "        )"
+        string.puts "      end"
+        string.puts "  end"
         string.puts "end"
       end
 
@@ -131,6 +147,44 @@ module Wax::Generators
       end
 
       file "src/models/#{name.underscore}.cr", code
+    end
+
+    def factory_file
+      code = String.build do |string|
+        string.puts %{require "./factory"}
+        string.puts
+        string.puts "Factory.define #{model_name} do"
+        string.puts "  def create("
+        required_properties.each do |property|
+          string << "    "
+          property.to_type_signature string
+          string << " = "
+          case property.crystal_type
+          when "UUID"
+            string << "UUID.v7"
+          when "Time"
+            string << "Time.utc"
+          when "String"
+            string << "noise"
+          when .starts_with?("Int"), .starts_with?("UInt")
+            string << "rand(#{property.crystal_type})"
+          else
+            string << "insert_default_value_here"
+          end
+          string.puts ','
+        end
+        string.puts "    query = #{model_name}Query.new,"
+        string.puts "  ) : #{model_name}"
+        string.puts "    valid! query.create("
+        required_properties.each do |property|
+          string.puts "      #{property.name}: #{property.name},"
+        end
+        string.puts "    )"
+        string.puts "  end"
+        string.puts "end"
+      end
+
+      file "spec/factories/#{name.underscore}.cr", code
     end
 
     def migration_files
@@ -186,6 +240,10 @@ module Wax::Generators
       end
     end
 
+    getter required_properties : Array(Property) do
+      properties.select(&.required?)
+    end
+
     private struct Property
       getter name : String
       getter crystal_type : String
@@ -205,12 +263,17 @@ module Wax::Generators
         @array = false,
         @unique = false,
         @primary_key = false,
-        @default = nil
+        @default = nil,
       )
       end
 
       def to_crystal(io) : Nil
-        io << "  getter #{name} : "
+        io << "  getter "
+        to_type_signature io
+      end
+
+      def to_type_signature(io) : Nil
+        io << name << " : "
         if array?
           io << "Array(" << crystal_type << ')'
         else
@@ -243,6 +306,14 @@ module Wax::Generators
         if default
           io << " DEFAULT " << default
         end
+      end
+
+      def required?
+        return false if name == "id" && crystal_type == "UUID"
+        return false if name == "created_at" && crystal_type == "Time"
+        return false if name == "updated_at" && crystal_type == "Time"
+
+        true
       end
     end
 
