@@ -271,6 +271,12 @@ module Wax::Generators
               where id: id
             end
           end
+
+          class Error < ::Exception
+          end
+
+          class MissingRecord < Error
+          end
         end
 
         EOF
