@@ -117,7 +117,7 @@ module Wax::Generators
         required_properties.each do |property|
           string.puts "    #{property.name} : #{property.crystal_type},"
         end
-        string.puts "  ) : #{model_name}"
+        string.puts "  ) : #{model_name} | Failure"
         string.puts "    Result(#{model_name}).new"
         string.puts "      .valid do"
         string.puts "        insert("
