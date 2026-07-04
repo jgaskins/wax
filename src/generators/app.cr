@@ -765,6 +765,7 @@ module Wax::Generators
           getter rows : Int32
           getter? autofocus : Bool
           getter? required : Bool
+          getter error : String?
 
           def initialize(
             @name,
@@ -776,7 +777,8 @@ module Wax::Generators
             @value = nil,
             @rows = 3,
             @autofocus = false,
-            @required = false
+            @required = false,
+            @error = nil,
           )
           end
 
