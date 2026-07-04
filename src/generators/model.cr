@@ -122,7 +122,7 @@ module Wax::Generators
         string.puts "      .valid do"
         string.puts "        insert("
         required_properties.each do |property|
-          string.puts "          #{property.name}: #{property.name}"
+          string.puts "          #{property.name}: #{property.name},"
         end
         string.puts "        )"
         string.puts "      end"
