@@ -145,7 +145,10 @@ module Wax::Commands::AI
     end
 
     def call
-      files.each { |file| File.delete file }
+      files.each do |file|
+        puts "Deleting #{file}..."
+        File.delete file
+      end
       {status: "success"}
     end
   end
