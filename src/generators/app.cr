@@ -1345,6 +1345,7 @@ module Wax::Generators
         {
           "devDependencies": {
             "@rollup/plugin-node-resolve": "^15.2.3",
+            "@rollup/plugin-terser": "^1.0.0",
             "@tailwindcss/forms": "^0.5.7",
             "autoprefixer": "^10.4.17",
             "postcss": "^8.4.33",
@@ -1388,6 +1389,7 @@ module Wax::Generators
 
       file "rollup.config.mjs", <<-EOF
         import { nodeResolve } from '@rollup/plugin-node-resolve';
+        import terser from '@rollup/plugin-terser';
 
         export default {
           input: 'assets/app.js',
@@ -1395,7 +1397,7 @@ module Wax::Generators
             dir: 'public',
             format: 'cjs',
           },
-          plugins: [nodeResolve()],
+          plugins: [nodeResolve(), terser()],
         };
 
         EOF
