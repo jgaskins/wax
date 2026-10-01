@@ -153,6 +153,8 @@ module Wax::Generators
       code = String.build do |string|
         string.puts %{require "./factory"}
         string.puts
+        string.puts %{src "queries/#{name.underscore}"}
+        string.puts
         string.puts "Factory.define #{model_name} do"
         string.puts "  def create("
         required_properties.each do |property|
