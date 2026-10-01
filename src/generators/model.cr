@@ -23,7 +23,7 @@ module Wax::Generators
             crystal_type: "UUID",
             sql_type: "UUID",
             primary_key: true,
-            default: "gen_random_uuid()",
+            default: "uuidv7()",
           )
         when %w[timestamps]
           [

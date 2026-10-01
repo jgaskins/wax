@@ -385,7 +385,7 @@ module Wax::Generators
       ]
       file "db/migrations/#{time_string}-CreateUsers/up.sql", <<-EOF
         CREATE TABLE users(
-          id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+          id UUID PRIMARY KEY NOT NULL DEFAULT uuidv7(),
           email TEXT UNIQUE NOT NULL,
           name TEXT NOT NULL,
           password TEXT NOT NULL,
