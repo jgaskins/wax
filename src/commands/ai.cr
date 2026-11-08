@@ -1,17 +1,36 @@
 require "anthropic"
 require "xml"
+require "log"
 
 module Wax::Commands::AI
   extend self
 
   Claude = Anthropic::Client.new
+  Log    = ::Log.for("wax.ai")
 
   def call(args : Array(String))
+    model = Anthropic.model_name(:sonnet)
+    temperature = nil
+    OptionParser.parse args do |parser|
+      parser.on "-m MODEL", "--model MODEL", "The model to use for this AI command" do |chosen_model|
+        model = chosen_model
+      end
+
+      parser.on "-t TEMPERATURE", "--temperature TEMPERATURE", "The temperature to pass to the AI model" do |temp|
+        temperature = temp.to_f
+      end
+    end
     prompt = args.first do
       STDERR.puts "Reading prompt from STDIN"
       STDIN.gets_to_end
     end
     puts "Analyzing the repo to determine how to accomplish this..."
+
+    system_prompt = [File.read("#{__DIR__}/../../ai/prompts/wax.md")]
+    %w[CLAUDE.md AGENTS.md].each do |file|
+      system_prompt << File.read(file) if File.exists? file
+    end
+    system_prompt << "The current time is #{Time.utc.to_rfc3339(fraction_digits: 9)}"
 
     files = Dir[
       "README.md",
@@ -36,9 +55,8 @@ module Wax::Commands::AI
       end
     end
 
-    puts Claude.messages.create(
-      model: Anthropic.model_name(:sonnet),
-      # model: Anthropic.model_name(:haiku),
+    output = Claude.messages.create(
+      model: model,
       messages: [
         Anthropic::Message.new(content: Array(Anthropic::MessageContent){
           Anthropic::Text.new(file_contents),
@@ -49,14 +67,20 @@ module Wax::Commands::AI
         FetchFileContents,
         WriteFiles,
         DeleteFiles,
+
+        GitStatus,
+        GitLog,
+        GitShow,
+        GitBlame,
       ],
       max_tokens: 8192,
-      temperature: 0,
-      system: {
-        File.read("#{__DIR__}/../../ai/prompts/wax.md"),
-        "The current time is #{Time.utc.to_rfc3339(fraction_digits: 9)}",
-      }.join("\n\n"),
+      temperature: temperature,
+      system: system_prompt.join("\n\n"),
     ).last
+
+    puts "-----"
+    puts
+    puts output
   end
 
   record FileData, path : String do
@@ -81,7 +105,7 @@ module Wax::Commands::AI
 
     def call
       paths.map do |path|
-        puts "Reading #{path}..."
+        Log.info &.emit "Reading file", path: path
         if File.exists? path
           {
             path:     path,
@@ -115,13 +139,13 @@ module Wax::Commands::AI
 
     def self.description
       <<-DESCRIPTION
-        Write or rewrite a list of files in the local git repository. You should write as many files as you need to at the same time. Before modifying any new files, you should read the existing version. You should also read other similar files to ensure you use existing code conventions.
+        Write or rewrite a list of files in the local git repository. You should write as many files as you need to at the same time. Before modifying any new files, you must read the existing version. You should also read other similar files to ensure you use existing code conventions.
         DESCRIPTION
     end
 
     def call
       files.each do |file|
-        puts "Writing #{file.path}..."
+        Log.info &.emit "Writing", path: file.path
         ::Dir.mkdir_p ::File.dirname(file.path)
         # Claude doesn't always put a newline at the end of the file, so we do
         # it so git and GitHub don't do that annoying "no newline at end of
@@ -146,10 +170,131 @@ module Wax::Commands::AI
 
     def call
       files.each do |file|
-        puts "Deleting #{file}..."
+        Log.info &.emit "Deleting", file: file
         File.delete file
       end
       {status: "success"}
+    end
+  end
+
+  module Command
+    def call
+      output = IO::Memory.new
+      error = IO::Memory.new
+
+      command = self.command
+      Log.info &.emit command.join(' ')
+      status = Process.run command, output: output, error: error
+
+      {
+        stdout:      output.to_s,
+        error:       error.to_s,
+        exit_status: status.exit_code,
+      }
+    end
+  end
+
+  struct GitStatus < Handler
+    include Command
+    @[JSON::Field(description: "Optional paths to check the git status of")]
+    getter paths : Array(String) = [] of String
+
+    def self.name
+      "GitStatus"
+    end
+
+    def self.description
+      "Return the git status of the repo, optionally with specific paths"
+    end
+
+    def command
+      %w[git status --short] + paths
+    end
+  end
+
+  struct GitLog < Handler
+    include Command
+
+    @[JSON::Field(description: "Optional range of commits to segment the log for")]
+    getter range : String?
+    @[JSON::Field(description: "Optional paths to check the git status of")]
+    getter paths : Array(String) = [] of String
+    @[JSON::Field(description: "Optional git log format")]
+    getter format : String?
+    @[JSON::Field(description: "Limit the output to the first <number> commits that would be shown.")]
+    getter max_count : Int32?
+    @[JSON::Field(description: "Limit the output to the last <number> commits that would be shown.")]
+    getter max_count_oldest : Int32?
+
+    def self.name
+      "GitLog"
+    end
+
+    def self.description
+      "Return the git log"
+    end
+
+    def command
+      command = %w[git log]
+      if range = self.range
+        command << range
+      end
+      command.concat paths
+      command << "--format=#{format}" if format
+      command << "--max-count=#{max_count}" if max_count
+      command << "--max-count-oldest=#{max_count_oldest}" if max_count_oldest
+
+      command
+    end
+  end
+
+  struct GitShow < Handler
+    include Command
+
+    @[JSON::Field(description: "SHA for the object to show")]
+    getter object_sha : String
+    @[JSON::Field(description: "Optional show format")]
+    getter format : String?
+
+    def self.name
+      "GitShow"
+    end
+
+    def self.description
+      "Show the given git object"
+    end
+
+    def command
+      command = %w[git show]
+      command << object_sha
+      command << "--format=#{format}" if format
+
+      command
+    end
+  end
+
+  struct GitBlame < Handler
+    include Command
+
+    @[JSON::Field(description: "The path of the files to run blame on.")]
+    getter path : String
+    @[JSON::Field(description: "Range of lines to blame, in `<start>,<end>` format")]
+    getter range : String?
+
+    def self.name
+      "GitBlame"
+    end
+
+    def self.description
+      "Run `git blame` on a file"
+    end
+
+    def command
+      command = %w[git blame]
+      command << path
+      command << "-L=#{range}" if range
+
+      command
     end
   end
 end
