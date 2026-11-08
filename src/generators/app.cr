@@ -1545,7 +1545,7 @@ module Wax::Generators
 
     def dockerfile
       file "Dockerfile", <<-EOF
-        FROM 84codes/crystal:1.17.1-alpine AS builder
+        FROM 84codes/crystal:1.22.2-alpine AS builder
 
         COPY shard.yml shard.lock /app/
         WORKDIR /app
